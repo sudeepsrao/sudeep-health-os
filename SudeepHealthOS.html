@@ -427,47 +427,51 @@
       <button class="today-btn" onclick="setLogDateToday()">Today</button>
     </div>
 
-    <!-- Collapsible day program reference -->
-    <div class="day-ref" id="dayRefCard">
-      <div class="day-ref-header" id="dayRefHeader" onclick="toggleDayRef()">
-        <span class="ref-title" id="dayRefTitle">📋 Today's Program</span>
+    <!-- Today's program exercises pre-populated -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title" id="progExTitle">📋 Today's Exercises</div>
+      <div id="progExList"></div>
+    </div>
+
+    <!-- Set input panel -->
+    <div id="setInputArea" style="display:none">
+      <div class="card" style="margin-bottom:10px;border-color:var(--accent)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div id="selectedExName" style="font-size:14px;font-weight:700;color:var(--text)"></div>
+          <button onclick="clearSelectedEx()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1">×</button>
+        </div>
+        <div id="setFieldsContainer"></div>
+        <button class="btn-primary" onclick="logSet()" style="margin-top:8px">+ Log Set</button>
+      </div>
+    </div>
+
+    <!-- Optional adds — collapsible -->
+    <div class="day-ref" id="optionalAddsCard">
+      <div class="day-ref-header" id="optionalAddsHeader" onclick="toggleOptionalAdds()">
+        <span class="ref-title">➕ Add something else</span>
         <span class="chevron">▼</span>
       </div>
-      <div class="day-ref-body" id="dayRefBody"></div>
-    </div>
-
-    <!-- Category filter pills -->
-    <div class="pill-row" id="logCatPills">
-      <div class="pill active" data-cat="All" onclick="filterLogCat(this)">All</div>
-      <div class="pill" data-cat="Push" onclick="filterLogCat(this)">Push</div>
-      <div class="pill" data-cat="Pull" onclick="filterLogCat(this)">Pull</div>
-      <div class="pill" data-cat="Legs" onclick="filterLogCat(this)">Legs</div>
-      <div class="pill" data-cat="Core" onclick="filterLogCat(this)">Core</div>
-      <div class="pill" data-cat="Mobility" onclick="filterLogCat(this)">Mobility</div>
-      <div class="pill" data-cat="Other" onclick="filterLogCat(this)">Other</div>
-    </div>
-
-    <!-- Search -->
-    <div class="search-row">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="exerciseSearch" placeholder="Search exercises…" oninput="filterExercises()">
-    </div>
-
-    <!-- Exercise list -->
-    <div class="exercise-list" id="exerciseList"></div>
-
-    <!-- Selected exercise + set inputs -->
-    <div id="setInputArea" style="display:none">
-      <div class="card" style="margin-bottom:10px">
-        <div class="card-title" id="selectedExName" style="text-transform:none;font-size:14px;font-weight:700;color:var(--text)"></div>
-        <div id="setFieldsContainer"></div>
-        <button class="btn-primary" onclick="logSet()" style="margin-top:8px">Add Set ↗</button>
+      <div class="day-ref-body" id="optionalAddsBody">
+        <div class="pill-row" id="logCatPills" style="margin-top:4px">
+          <div class="pill active" data-cat="All" onclick="filterLogCat(this)">All</div>
+          <div class="pill" data-cat="Push" onclick="filterLogCat(this)">Push</div>
+          <div class="pill" data-cat="Pull" onclick="filterLogCat(this)">Pull</div>
+          <div class="pill" data-cat="Legs" onclick="filterLogCat(this)">Legs</div>
+          <div class="pill" data-cat="Core" onclick="filterLogCat(this)">Core</div>
+          <div class="pill" data-cat="Mobility" onclick="filterLogCat(this)">Mobility</div>
+          <div class="pill" data-cat="Other" onclick="filterLogCat(this)">Other</div>
+        </div>
+        <div class="search-row" style="margin-top:8px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="exerciseSearch" placeholder="Search exercises…" oninput="filterExercises()">
+        </div>
+        <div class="exercise-list" id="exerciseList" style="max-height:180px;margin-bottom:0"></div>
       </div>
     </div>
 
-    <!-- Today's log history -->
-    <div class="log-history" id="logHistorySection" style="display:none">
-      <div class="card-title" style="margin-bottom:8px">📝 Logged Today</div>
+    <!-- Log history -->
+    <div class="log-history" id="logHistorySection" style="display:none;margin-top:14px">
+      <div class="card-title" style="margin-bottom:8px">📝 Logged</div>
       <div id="logHistoryList"></div>
     </div>
   </div>
@@ -856,10 +860,9 @@ function togglePlanDay(header) {
 
 // ── LOG TAB ──────────────────────────────────────────────────────────────────
 function renderLogTab() {
-  // Set date picker
   const dateInput = document.getElementById('logDate');
   if (!dateInput.value) dateInput.value = logDateSelected;
-  updateDayRef(logDateSelected);
+  renderProgExList(logDateSelected);
   renderExerciseList();
   renderLogHistory();
 }
@@ -871,35 +874,50 @@ function setLogDateToday() {
 }
 function onLogDateChange() {
   logDateSelected = document.getElementById('logDate').value;
-  updateDayRef(logDateSelected);
+  renderProgExList(logDateSelected);
   renderLogHistory();
-  // clear selection
-  selectedExercise = null;
-  document.getElementById('setInputArea').style.display = 'none';
+  clearSelectedEx();
 }
 
-function updateDayRef(dateStr) {
+function renderProgExList(dateStr) {
   const dow = getDayOfWeek(dateStr);
   const prog = WEEKLY_PROGRAM[dow];
-  document.getElementById('dayRefTitle').textContent = `📋 ${DAY_NAMES[dow]} Program — ${prog.emoji} ${prog.type}`;
-  const body = document.getElementById('dayRefBody');
+  const titleEl = document.getElementById('progExTitle');
+  if (titleEl) titleEl.textContent = `📋 ${DAY_NAMES[dow]} — ${prog.emoji} ${prog.type}`;
+
+  const container = document.getElementById('progExList');
+  if (!container) return;
+
+  // Get logged exercise names for this date to show checkmarks
+  const logged = loadLocalLogs(dateStr).map(l => l.exercise);
+
   if (prog.exercises.length === 1 && prog.exercises[0].sets.includes('Strava')) {
-    body.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:8px 0">🔄 Auto-synced via Strava</div>`;
-  } else {
-    body.innerHTML = prog.exercises.map(ex =>
-      `<div class="ref-exercise">
-        <span>${ex.name}${ex.note ? ` <span style="color:var(--text3);font-size:11px">· ${ex.note}</span>` : ''}</span>
-        <span class="ref-sets">${ex.sets}</span>
-      </div>`
-    ).join('');
+    container.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:8px 0;text-align:center">🔄 Auto-synced via Strava — nothing to log manually</div>`;
+    return;
   }
+
+  container.innerHTML = prog.exercises.map(ex => {
+    const isLogged = logged.includes(ex.name);
+    const exData = getAllExercises().find(e => e.name === ex.name) || { name: ex.name, cat: ex.cat || 'Other', type: ex.type || 'bodyweight' };
+    return `<div class="exercise-item ${isLogged ? 'logged' : ''}" onclick="selectExercise(${JSON.stringify(exData).replace(/"/g,'&quot;')})">
+      <div style="flex:1">
+        <div class="ex-name" style="${isLogged?'color:var(--accent3)':''}">${isLogged ? '✓ ' : ''}${ex.name}</div>
+        <div class="ex-cat">${ex.sets}${ex.note ? ' · ' + ex.note : ''}</div>
+      </div>
+      <div class="ex-type-badge">${exData.type}</div>
+    </div>`;
+  }).join('');
 }
 
-function toggleDayRef() {
-  const header = document.getElementById('dayRefHeader');
-  const body = document.getElementById('dayRefBody');
+function toggleOptionalAdds() {
+  const header = document.getElementById('optionalAddsHeader');
+  const body = document.getElementById('optionalAddsBody');
+  if (!header || !body) return;
   header.classList.toggle('open');
   body.classList.toggle('open');
+  if (body.classList.contains('open')) {
+    renderExerciseList();
+  }
 }
 
 function filterLogCat(el) {
@@ -915,7 +933,11 @@ function filterExercises() {
 
 function renderExerciseList() {
   const search = (document.getElementById('exerciseSearch')?.value || '').toLowerCase();
+  // Exclude exercises already in today's program
+  const dow = getDayOfWeek(logDateSelected);
+  const progNames = new Set(WEEKLY_PROGRAM[dow].exercises.map(e => e.name));
   const exercises = getAllExercises().filter(ex => {
+    if (progNames.has(ex.name)) return false; // already in program list above
     if (currentLogCat !== 'All' && ex.cat !== currentLogCat) return false;
     if (search && !ex.name.toLowerCase().includes(search)) return false;
     return true;
@@ -924,7 +946,7 @@ function renderExerciseList() {
   const container = document.getElementById('exerciseList');
   if (!container) return;
   if (exercises.length === 0) {
-    container.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No exercises found</div>`;
+    container.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text3);font-size:13px">No exercises found</div>`;
     return;
   }
   container.innerHTML = exercises.map(ex =>
@@ -938,12 +960,16 @@ function renderExerciseList() {
   ).join('');
 }
 
+function clearSelectedEx() {
+  selectedExercise = null;
+  document.getElementById('setInputArea').style.display = 'none';
+}
+
 function selectExercise(ex) {
   selectedExercise = ex;
   document.getElementById('selectedExName').textContent = ex.name;
   document.getElementById('setInputArea').style.display = 'block';
   renderSetFields(ex.type);
-  renderExerciseList(); // highlight
   document.getElementById('setInputArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -1026,6 +1052,7 @@ function logSet() {
   sendToSheets(logData);
 
   showToast('✓ Logged: ' + ex.name);
+  renderProgExList(logDateSelected); // update checkmarks
   renderLogHistory();
 }
 
@@ -1361,7 +1388,7 @@ function renderHRZoneBar(avgHR) {
 
 // ── STRAVA OAUTH ──────────────────────────────────────────────────────────────
 function connectStrava() {
-  const redirectUri = encodeURIComponent(window.location.href.split('?')[0]);
+  const redirectUri = encodeURIComponent('https://sudeepsrao.github.io/sudeep-health-os/SudeepHealthOS.html');
   window.location.href = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=auto&scope=activity:read_all`;
 }
 
