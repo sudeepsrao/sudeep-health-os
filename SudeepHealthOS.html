@@ -1410,12 +1410,10 @@ function handleStravaCallback() {
   // Clear URL immediately — prevents re-trigger on refresh
   window.history.replaceState({}, document.title, window.location.pathname);
   showToast('Connecting Strava…', 4000);
-  // Use doPost with action=stravaToken — this returns clean JSON (unlike doGet which returns HTML)
-  fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'stravaToken', code: code })
-  })
+  // GAS doesn't allow CORS on POST with JSON — use no-cors form POST via a hidden iframe trick,
+  // then poll GAS via GET for the saved token
+  // Simplest working approach: GET with action=stravaToken as a query param (doGet handles it)
+  fetch(GAS_URL + '?action=stravaToken&code=' + encodeURIComponent(code))
   .then(r => r.json())
   .then(d => {
     if (d.access_token) {
