@@ -1404,19 +1404,23 @@ function handleStravaCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   if (!code) return;
-  // Exchange via GAS proxy
-  fetch(GAS_URL + '?action=stravaAuth&code=' + code)
+  // Clear URL immediately so a page refresh doesn't re-trigger the loop
+  window.history.replaceState({}, document.title, window.location.pathname);
+  showToast('Connecting Strava…', 4000);
+  // GAS auto-detects ?code= parameter (line 175 in doGet)
+  fetch(GAS_URL + '?code=' + code)
     .then(r => r.json())
     .then(d => {
       if (d.access_token) {
         localStorage.setItem('strava_access_token', d.access_token);
-        localStorage.setItem('strava_refresh_token', d.refresh_token || '');
-        window.history.replaceState({}, document.title, window.location.pathname);
+        if (d.refresh_token) localStorage.setItem('strava_refresh_token', d.refresh_token);
         showToast('✓ Strava connected!');
         showTab('activity');
+      } else {
+        showToast('Strava auth failed: ' + (d.error || JSON.stringify(d)));
       }
     })
-    .catch(() => showToast('Strava auth failed'));
+    .catch(err => showToast('Strava error: ' + err.message));
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
