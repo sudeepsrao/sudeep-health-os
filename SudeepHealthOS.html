@@ -1404,23 +1404,46 @@ function handleStravaCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   if (!code) return;
-  // Clear URL immediately so a page refresh doesn't re-trigger the loop
+  // Clear URL immediately to prevent re-trigger loop on refresh
   window.history.replaceState({}, document.title, window.location.pathname);
   showToast('Connecting Strava…', 4000);
-  // GAS auto-detects ?code= parameter (line 175 in doGet)
-  fetch(GAS_URL + '?code=' + code)
-    .then(r => r.json())
-    .then(d => {
-      if (d.access_token) {
-        localStorage.setItem('strava_access_token', d.access_token);
-        if (d.refresh_token) localStorage.setItem('strava_refresh_token', d.refresh_token);
-        showToast('✓ Strava connected!');
-        showTab('activity');
-      } else {
-        showToast('Strava auth failed: ' + (d.error || JSON.stringify(d)));
+  // Use action=stravaCallback which exists in GAS (line 185)
+  fetch(GAS_URL + '?action=stravaCallback&code=' + code)
+    .then(r => r.text())
+    .then(text => {
+      try {
+        const d = JSON.parse(text);
+        if (d.access_token) {
+          localStorage.setItem('strava_access_token', d.access_token);
+          if (d.refresh_token) localStorage.setItem('strava_refresh_token', d.refresh_token);
+          showToast('✓ Strava connected!');
+          showTab('activity');
+        } else {
+          showToast('Auth failed: ' + (d.error || JSON.stringify(d)));
+        }
+      } catch(e) {
+        // GAS returned HTML — means stravaCallback uses HtmlService/redirect
+        // Fall back: try the direct code detection (no action param)
+        fetch(GAS_URL + '?code=' + code)
+          .then(r => r.text())
+          .then(text2 => {
+            try {
+              const d2 = JSON.parse(text2);
+              if (d2.access_token) {
+                localStorage.setItem('strava_access_token', d2.access_token);
+                if (d2.refresh_token) localStorage.setItem('strava_refresh_token', d2.refresh_token);
+                showToast('✓ Strava connected!');
+                showTab('activity');
+              } else {
+                showToast('Auth failed: ' + (d2.error || text2.substring(0,80)));
+              }
+            } catch(e2) {
+              showToast('GAS returned HTML — check Apps Script deployment');
+            }
+          });
       }
     })
-    .catch(err => showToast('Strava error: ' + err.message));
+    .catch(err => showToast('Network error: ' + err.message));
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
