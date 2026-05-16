@@ -1267,15 +1267,19 @@ function filterActivity(el) {
   renderActivities();
 }
 
+
+
 function renderActivities() {
   const el = document.getElementById('activityList');
   let acts = allActivities;
   if (activityFilter !== 'All') {
     acts = acts.filter(a => {
-      if (activityFilter === 'Run') return a.type === 'Run';
-      if (activityFilter === 'Swim') return a.type === 'Swim';
-      if (activityFilter === 'Ride') return a.type === 'Ride';
-      if (activityFilter === 'Gym') return ['WeightTraining','Workout','CrossFit'].includes(a.type);
+      const t = (a.exercise || '').toLowerCase();
+      const type = a.type || '';
+      if (activityFilter === 'Run') return t.includes('run') || t.includes('interval');
+      if (activityFilter === 'Swim') return type === 'swim' || t.includes('swim') || t.includes('breaststroke') || t.includes('freestyle');
+      if (activityFilter === 'Ride') return t.includes('ride') || t.includes('cycling');
+      if (activityFilter === 'Gym') return type === 'strength' || t.includes('workout');
       return true;
     });
   }
@@ -1287,88 +1291,45 @@ function renderActivities() {
 }
 
 function renderActivityCard(a) {
-  const date = new Date(a.start_date_local).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-  const type = a.type;
-  const icons = { Run: '🏃', Swim: '🏊', Ride: '🚴', WeightTraining: '💪', Workout: '💪', Walk: '🚶' };
-  const icon = icons[type] || '🏅';
+  const date = a.date || '';
+  const name = a.exercise || 'Activity';
+  const note = a.note || '';
+  const mins = a.mins || '';
+  const type = a.type || '';
+  const ex = name.toLowerCase();
 
-  let statsHTML = '';
+  const icons = { swim: '🏊', cardio: '🏃', strength: '💪' };
+  let icon = icons[type] || '🏅';
+  if (ex.includes('ride') || ex.includes('cycling')) icon = '🚴';
+  if (ex.includes('swim') || ex.includes('breaststroke') || ex.includes('freestyle')) icon = '🏊';
+  if (ex.includes('run')) icon = '🏃';
 
-  if (type === 'Run') {
-    const distKm = (a.distance / 1000).toFixed(2);
-    const durMin = Math.floor(a.moving_time / 60);
-    const paceSecPerKm = a.moving_time / (a.distance / 1000);
-    const paceMin = Math.floor(paceSecPerKm / 60);
-    const paceSec = Math.round(paceSecPerKm % 60).toString().padStart(2,'0');
-    const avgHR = a.average_heartrate ? Math.round(a.average_heartrate) : '—';
-    const maxHR = a.max_heartrate ? Math.round(a.max_heartrate) : '—';
-    const elev = a.total_elevation_gain ? Math.round(a.total_elevation_gain) : 0;
-    statsHTML = `
-      <div class="act-stats">
-        <div class="act-stat"><div class="act-stat-val">${distKm}</div><div class="act-stat-lbl">km</div></div>
-        <div class="act-stat"><div class="act-stat-val">${durMin}'</div><div class="act-stat-lbl">min</div></div>
-        <div class="act-stat"><div class="act-stat-val">${paceMin}:${paceSec}</div><div class="act-stat-lbl">min/km</div></div>
-        <div class="act-stat"><div class="act-stat-val">${avgHR}</div><div class="act-stat-lbl">avg bpm</div></div>
-        <div class="act-stat"><div class="act-stat-val">${maxHR}</div><div class="act-stat-lbl">max bpm</div></div>
-        <div class="act-stat"><div class="act-stat-val">${elev}m</div><div class="act-stat-lbl">elev ↑</div></div>
-      </div>
-      ${avgHR !== '—' ? renderHRZoneBar(avgHR) : ''}`;
+  // Parse metrics from note string (e.g. "dist: 5.2km · avg pace: 5:30/km · avg HR: 142")
+  const stats = [];
+  const noteparts = note.split(' · ');
+  noteparts.forEach(p => {
+    const [label, val] = p.split(': ');
+    if (val) stats.push({ label: label.trim(), val: val.trim() });
+  });
 
-  } else if (type === 'Swim') {
-    const distM = Math.round(a.distance || 0);
-    const durMin = Math.floor(a.moving_time / 60);
-    const laps = a.lap_count || Math.round(distM / 50);
-    const swolf = a.average_cadence ? Math.round(a.average_cadence) : '—';
-    const avgHR = a.average_heartrate ? Math.round(a.average_heartrate) : '—';
-    const pace100 = a.distance > 0 ? (() => {
-      const s = (a.moving_time / (a.distance / 100));
-      return `${Math.floor(s/60)}:${Math.round(s%60).toString().padStart(2,'0')}`;
-    })() : '—';
-    statsHTML = `
-      <div class="act-stats">
-        <div class="act-stat"><div class="act-stat-val">${distM}</div><div class="act-stat-lbl">metres</div></div>
-        <div class="act-stat"><div class="act-stat-val">${durMin}'</div><div class="act-stat-lbl">min</div></div>
-        <div class="act-stat"><div class="act-stat-val">${laps}</div><div class="act-stat-lbl">laps</div></div>
-        <div class="act-stat"><div class="act-stat-val">${swolf}</div><div class="act-stat-lbl">SWOLF</div></div>
-        <div class="act-stat"><div class="act-stat-val">${pace100}</div><div class="act-stat-lbl">min/100m</div></div>
-        <div class="act-stat"><div class="act-stat-val">${avgHR}</div><div class="act-stat-lbl">avg bpm</div></div>
-      </div>`;
+  if (mins) stats.unshift({ label: 'min', val: mins });
 
-  } else if (type === 'Ride') {
-    const distKm = (a.distance / 1000).toFixed(1);
-    const durMin = Math.floor(a.moving_time / 60);
-    const speedKmh = ((a.distance / 1000) / (a.moving_time / 3600)).toFixed(1);
-    const power = a.average_watts ? Math.round(a.average_watts) + 'W' : '—';
-    const avgHR = a.average_heartrate ? Math.round(a.average_heartrate) : '—';
-    const elev = a.total_elevation_gain ? Math.round(a.total_elevation_gain) : 0;
-    statsHTML = `
-      <div class="act-stats">
-        <div class="act-stat"><div class="act-stat-val">${distKm}</div><div class="act-stat-lbl">km</div></div>
-        <div class="act-stat"><div class="act-stat-val">${durMin}'</div><div class="act-stat-lbl">min</div></div>
-        <div class="act-stat"><div class="act-stat-val">${speedKmh}</div><div class="act-stat-lbl">km/h</div></div>
-        <div class="act-stat"><div class="act-stat-val">${power}</div><div class="act-stat-lbl">power</div></div>
-        <div class="act-stat"><div class="act-stat-val">${avgHR}</div><div class="act-stat-lbl">avg bpm</div></div>
-        <div class="act-stat"><div class="act-stat-val">${elev}m</div><div class="act-stat-lbl">elev ↑</div></div>
-      </div>
-      ${avgHR !== '—' ? renderHRZoneBar(avgHR) : ''}`;
+  const statsHTML = stats.length ? `<div class="act-stats">
+    ${stats.map(s => `<div class="act-stat"><div class="act-stat-val">${s.val}</div><div class="act-stat-lbl">${s.label}</div></div>`).join('')}
+  </div>` : '';
 
-  } else {
-    const durMin = Math.floor(a.moving_time / 60);
-    const avgHR = a.average_heartrate ? Math.round(a.average_heartrate) : '—';
-    statsHTML = `
-      <div class="act-stats">
-        <div class="act-stat"><div class="act-stat-val">${durMin}'</div><div class="act-stat-lbl">min</div></div>
-        ${avgHR !== '—' ? `<div class="act-stat"><div class="act-stat-val">${avgHR}</div><div class="act-stat-lbl">avg bpm</div></div>` : ''}
-      </div>`;
-  }
+  // HR zone bar if avg HR in stats
+  const hrStat = stats.find(s => s.label === 'avg HR');
+  const hrBar = hrStat ? renderHRZoneBar(parseInt(hrStat.val)) : '';
 
   return `<div class="act-card">
     <div class="act-header">
       <span class="act-type-icon">${icon}</span>
       <span class="act-date">${date}</span>
     </div>
-    <div class="act-name">${a.name}</div>
+    <div class="act-name">${name}</div>
     ${statsHTML}
+    ${hrBar}
   </div>`;
 }
 
@@ -1388,45 +1349,57 @@ function renderHRZoneBar(avgHR) {
 
 // ── STRAVA OAUTH ──────────────────────────────────────────────────────────────
 function connectStrava() {
-  const redirectUri = encodeURIComponent('https://sudeepsrao.github.io/sudeep-health-os/SudeepHealthOS.html');
-  window.location.href = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=auto&scope=activity:read_all`;
+  // Redirect to GAS which handles the full OAuth flow and saves token to Sheet
+  fetch(GAS_URL + '?action=stravaCallback')
+    .then(r => r.json())
+    .then(d => {
+      if (d.auth_url) window.location.href = d.auth_url;
+    })
+    .catch(() => {
+      // Fallback: build auth URL directly, redirect back to GAS script URL
+      // User must get the GAS script URL from their deployment
+      showToast('Could not initiate Strava auth. Check GAS deployment.');
+    });
 }
 
 function syncStrava() {
-  const token = localStorage.getItem('strava_access_token');
-  if (!token) {
-    showToast('Go to Activity tab to connect Strava');
-    return;
-  }
   document.getElementById('syncStatus').innerHTML = '<span class="spinner"></span> Syncing…';
-  loadActivities();
-  setTimeout(() => { document.getElementById('syncStatus').textContent = 'Synced just now'; }, 2000);
+  // Sync via GAS — GAS holds the token, fetches from Strava, saves to Sheet
+  fetch(GAS_URL + '?action=stravaSync')
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'ok') {
+        document.getElementById('syncStatus').textContent = `Synced · ${d.added} new`;
+        loadActivities();
+      } else if (d.message === 'Not authenticated') {
+        document.getElementById('syncStatus').textContent = 'Not connected';
+        connectStrava();
+      } else {
+        document.getElementById('syncStatus').textContent = 'Sync error';
+      }
+    })
+    .catch(() => {
+      document.getElementById('syncStatus').textContent = 'Sync failed';
+    });
 }
 
-function handleStravaCallback() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if (!code) return;
-  // Clear URL immediately — prevents re-trigger on refresh
-  window.history.replaceState({}, document.title, window.location.pathname);
-  showToast('Connecting Strava…', 4000);
-  // GAS doesn't allow CORS on POST with JSON — use no-cors form POST via a hidden iframe trick,
-  // then poll GAS via GET for the saved token
-  // Simplest working approach: GET with action=stravaToken as a query param (doGet handles it)
-  fetch(GAS_URL + '?action=stravaToken&code=' + encodeURIComponent(code))
-  .then(r => r.json())
-  .then(d => {
-    if (d.access_token) {
-      localStorage.setItem('strava_access_token', d.access_token);
-      if (d.refresh_token) localStorage.setItem('strava_refresh_token', d.refresh_token);
-      if (d.expires_at) localStorage.setItem('strava_expires_at', d.expires_at);
-      showToast('✓ Strava connected!');
-      showTab('activity');
-    } else {
-      showToast('Strava error: ' + (d.error || d.message || JSON.stringify(d)));
-    }
-  })
-  .catch(err => showToast('Network error: ' + err.message));
+function loadActivities() {
+  const el = document.getElementById('activityList');
+  el.innerHTML = `<div style="color:var(--text3);text-align:center;padding:30px 0"><div class="spinner"></div> Loading from Strava...</div>`;
+  // Load from GAS which proxies Strava with stored token
+  fetch(GAS_URL + '?action=getWorkoutLogs')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.rows) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px 0">No activities yet — tap Sync</div>'; return; }
+      // Filter only Strava-sourced rows and sort newest first
+      allActivities = d.rows
+        .filter(r => r.source === 'strava' && r.strava_id)
+        .sort((a,b) => new Date(b.date) - new Date(a.date));
+      renderActivities();
+    })
+    .catch(() => {
+      el.innerHTML = `<div style="color:var(--text3);text-align:center;padding:30px 0">Error loading. Tap Sync to retry.</div>`;
+    });
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
@@ -1438,11 +1411,6 @@ function closeModal() {
 window.addEventListener('DOMContentLoaded', () => {
   // Date picker default
   document.getElementById('logDate').value = getTodayStr();
-
-  // Handle Strava OAuth callback
-  if (window.location.search.includes('code=')) {
-    handleStravaCallback();
-  }
 
   // Init home
   initHome();
