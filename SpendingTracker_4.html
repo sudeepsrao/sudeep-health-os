@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Spend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--surface:#141418;--surface2:#1c1c22;--border:#2a2a32;
+  --accent:#e8ff3e;--accent2:#3effd4;--danger:#ff4f4f;--muted:#5a5a6e;
+  --text:#f0f0f5;--text2:#9090a8;
+  --font-head:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+  --r:12px;--r-lg:20px;--gap:16px;
+  --c-food:#ff8c42;--c-trans:#3effd4;--c-groc:#7cff6b;--c-health:#ff4f8b;
+  --c-util:#a78bfa;--c-charity:#ffd166;--c-ent:#38bdf8;--c-other:#9090a8;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:14px;line-height:1.5;overflow-x:hidden}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:80px}
+header{padding:24px var(--gap) 16px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{font-family:var(--font-head);font-size:28px;font-weight:800;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.month-nav{display:flex;align-items:center;gap:8px;font-size:12px}
+.mnav-btn{background:none;border:1px solid var(--border);color:var(--text2);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1;transition:all .15s}
+.mnav-btn:hover{border-color:var(--accent);color:var(--accent)}
+#month-label{min-width:72px;text-align:center;color:var(--text);font-weight:500;font-family:var(--font-mono);font-size:12px}
+nav{display:flex;border-bottom:1px solid var(--border);padding:0 var(--gap);gap:4px}
+.tab{padding:10px 14px;font-family:var(--font-head);font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text2)}
+.view{display:none;padding:var(--gap)}
+.view.active{display:block}
+.total-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:var(--gap);display:flex;align-items:center;justify-content:space-between}
+.total-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px}
+.total-amount{font-family:var(--font-head);font-size:36px;font-weight:800;color:var(--accent);letter-spacing:-1px}
+.total-count{font-size:11px;color:var(--muted);margin-top:2px}
+.sec-title{font-family:var(--font-head);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:var(--gap)}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.cat-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:3px 0 0 3px}
+.cat-icon{font-size:18px;margin-bottom:6px}
+.cat-name{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.cat-amount{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text)}
+.cat-bar-bg{height:3px;background:var(--border);border-radius:2px;margin-top:8px}
+.cat-bar{height:3px;border-radius:2px;transition:width .6s ease}
+.entries-list{display:flex;flex-direction:column;gap:8px}
+.entry-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:12px}
+.entry-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.entry-info{flex:1;min-width:0}
+.entry-cat{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2)}
+.entry-note{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-date{font-size:10px;color:var(--muted);margin-top:2px}
+.entry-amount{font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--text);white-space:nowrap}
+.entry-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;border-radius:4px;transition:color .15s;opacity:0}
+.entry-row:hover .entry-del{opacity:1}
+.entry-del:hover{color:var(--danger)}
+.add-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:var(--gap)}
+.add-title{font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text)}
+.amount-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:4px 4px 4px 14px;transition:border-color .15s}
+.amount-row:focus-within{border-color:var(--accent)}
+.curr{font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--accent)}
+#amount-input{flex:1;background:none;border:none;outline:none;font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--text);width:100%}
+#amount-input::placeholder{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{padding:6px 12px;border-radius:100px;font-size:12px;font-family:var(--font-head);font-weight:600;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.chip:hover:not(.chip-sel){border-color:var(--text2);color:var(--text)}
+#note-input,#date-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none;transition:border-color .15s;margin-bottom:14px}
+#note-input:focus,#date-input:focus{border-color:var(--accent)}
+#note-input::placeholder{color:var(--muted)}
+#date-input{color-scheme:dark;margin-bottom:16px}
+.btn-row{display:flex;gap:10px}
+.btn-voice{width:52px;height:52px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.btn-voice:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-voice.listening{background:color-mix(in srgb,var(--accent2) 15%,transparent);border-color:var(--accent2);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent2) 40%,transparent)}50%{box-shadow:0 0 0 8px transparent}}
+.btn-submit{flex:1;height:52px;border-radius:var(--r);background:var(--accent);border:none;color:#0d0d0f;font-family:var(--font-head);font-size:15px;font-weight:800;letter-spacing:.5px;cursor:pointer;transition:all .15s}
+.btn-submit:hover{opacity:.85}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed}
+#voice-hint{font-size:11px;color:var(--accent2);margin-bottom:10px;min-height:16px;font-style:italic}
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:10px 20px;font-size:13px;color:var(--text);opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--accent);color:var(--accent)}
+#toast.err{border-color:var(--danger);color:var(--danger)}
+.chart-section{margin-bottom:24px}
+.chart-title{font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;grid-column:1/-1}
+.empty .big{font-size:32px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">spend<span>.</span></div>
+    <div class="month-nav">
+      <button class="mnav-btn" onclick="changeMonth(-1)">&lsaquo;</button>
+      <span id="month-label"></span>
+      <button class="mnav-btn" onclick="changeMonth(1)">&rsaquo;</button>
+    </div>
+  </header>
+  <nav>
+    <button class="tab active" id="tab-overview" onclick="switchTab('overview')">Overview</button>
+    <button class="tab" id="tab-log" onclick="switchTab('log')">Log</button>
+    <button class="tab" id="tab-add" onclick="switchTab('add')">+ Add</button>
+    <button class="tab" id="tab-charts" onclick="switchTab('charts')">Charts</button>
+  </nav>
+
+  <div id="view-overview" class="view active">
+    <div class="total-strip">
+      <div>
+        <div class="total-label">Month Total</div>
+        <div class="total-amount" id="ov-total">&#8377;0</div>
+        <div class="total-count" id="ov-count">0 entries</div>
+      </div>
+      <div style="font-size:40px">&#128179;</div>
+    </div>
+    <div class="sec-title">By Category</div>
+    <div class="cat-grid" id="cat-grid"><div class="empty"><div class="big">&#128194;</div>No data yet</div></div>
+  </div>
+
+  <div id="view-log" class="view">
+    <div class="entries-list" id="entries-list"><div class="empty"><div class="big">&#129534;</div>No entries this month</div></div>
+  </div>
+
+  <div id="view-add" class="view">
+    <div class="add-card">
+      <div class="add-title">Log Expense</div>
+      <div id="voice-hint"></div>
+      <div class="amount-row">
+        <span class="curr">&#8377;</span>
+        <input type="number" id="amount-input" placeholder="0" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="sec-title" style="margin-bottom:8px">Category</div>
+      <div class="chips" id="chips-container"></div>
+      <input type="text" id="note-input" placeholder="Note (optional)...">
+      <input type="date" id="date-input">
+      <div class="btn-row">
+        <button class="btn-voice" id="voice-btn" onclick="toggleVoice()">&#127897;&#65039;</button>
+        <button class="btn-submit" id="submit-btn" onclick="submitExpense()">LOG EXPENSE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-charts" class="view">
+    <div class="chart-section"><div class="chart-title">Monthly Spend Trend</div><canvas id="chart-trend" height="200"></canvas></div>
+    <div class="chart-section"><div class="chart-title">This Month by Category</div><canvas id="chart-pie" height="260"></canvas></div>
+    <div class="chart-section"><div class="chart-title">Last 3 Months by Category</div><canvas id="chart-stacked" height="220"></canvas></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxtgJWAAiksZdcPZYOdxl1A0RTRLIWGzf7xzrUQcmky1EJnilf3dTIZS-v0JxtorJvmLw/exec';
+
+const CATS = [
+  { id:'food',    label:'Food & Dining',     icon:'🍽️', color:'#ff8c42' },
+  { id:'trans',   label:'Transport',         icon:'🚗', color:'#3effd4' },
+  { id:'groc',    label:'Groceries',         icon:'🛒', color:'#7cff6b' },
+  { id:'health',  label:'Health & Medical',  icon:'💊', color:'#ff4f8b' },
+  { id:'util',    label:'Utilities & Bills', icon:'⚡', color:'#a78bfa' },
+  { id:'charity', label:'Charity',           icon:'🤝', color:'#ffd166' },
+  { id:'ent',     label:'Entertainment',     icon:'🎬', color:'#38bdf8' },
+  { id:'other',   label:'Other',             icon:'📦', color:'#9090a8' }
+];
+const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+
+let currentMonth = new Date().toISOString().slice(0,7);
+let allEntries = [];
+let summaryData = [];
+let selectedCat = '';
+let chartTrend = null, chartPie = null, chartStacked = null;
+let recognition = null, isListening = false;
+
+// ── Init
+window.addEventListener('DOMContentLoaded', function() {
+  renderMonthLabel();
+  buildChips();
+  document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
+  loadData();
+});
+
+// ── Month
+function renderMonthLabel() {
+  var parts = currentMonth.split('-');
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('month-label').textContent = months[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
+}
+
+function changeMonth(dir) {
+  var parts = currentMonth.split('-');
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1 + dir, 1);
+  currentMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  renderMonthLabel();
+  loadData();
+}
+
+// ── Tabs
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('view-' + name).classList.add('active');
+  if (name === 'charts') renderCharts();
+}
+
+// ── Chips
+function buildChips() {
+  var html = '';
+  CATS.forEach(function(c) {
+    html += '<button class="chip" id="chip-' + c.id + '" onclick="selectCat(\'' + c.id + '\')" style="--cc:' + c.color + '">' + c.icon + ' ' + c.label + '</button>';
+  });
+  document.getElementById('chips-container').innerHTML = html;
+}
+
+function selectCat(id) {
+  selectedCat = id;
+  document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('chip-sel'); c.style.background=''; c.style.borderColor=''; c.style.color=''; });
+  var chip = document.getElementById('chip-' + id);
+  var cat = CAT[id];
+  if (chip && cat) {
+    chip.classList.add('chip-sel');
+    chip.style.background = cat.color + '33';
+    chip.style.borderColor = cat.color;
+    chip.style.color = cat.color;
+  }
+}
+
+// ── Load data
+function loadData() {
+  if (!GAS_URL) return;
+  fetch(GAS_URL + '?action=getAll&month=' + currentMonth)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      allEntries = j.status === 'ok' ? j.entries : [];
+      renderOverview(allEntries);
+      renderLog(allEntries);
+    })
+    .catch(function(){ showToast('Could not load data', 'err'); });
+  fetch(GAS_URL + '?action=getSummary')
+    .then(function(r){ return r.json(); })
+    .then(function(j){ summaryData = j.status === 'ok' ? j.summary : []; })
+    .catch(function(){});
+}
+
+// ── Overview
+function renderOverview(entries) {
+  var total = entries.reduce(function(s,e){ return s + e.amount; }, 0);
+  document.getElementById('ov-total').textContent = '\u20b9' + fmt(total);
+  document.getElementById('ov-count').textContent = entries.length + ' ' + (entries.length === 1 ? 'entry' : 'entries');
+  var grid = document.getElementById('cat-grid');
+  if (!entries.length) {
+    grid.innerHTML = '<div class="empty"><div class="big">&#128194;</div>No data for ' + currentMonth + '</div>';
+    return;
+  }
+  var totals = {};
+  entries.forEach(function(e){ totals[e.category] = (totals[e.category] || 0) + e.amount; });
+  var maxVal = Math.max.apply(null, Object.values(totals));
+  var html = '';
+  CATS.forEach(function(c) {
+    if (!totals[c.id]) return;
+    var amt = totals[c.id];
+    var pct = maxVal ? Math.round(amt/maxVal*100) : 0;
+    html += '<div class="cat-card" style="--cc:' + c.color + '">';
+    html += '<div class="cat-card-accent" style="position:absolute;top:0;left:0;width:3px;height:100%;background:' + c.color + ';border-radius:3px 0 0 3px"></div>';
+    html += '<div class="cat-icon">' + c.icon + '</div>';
+    html += '<div class="cat-name">' + c.label + '</div>';
+    html += '<div class="cat-amount">\u20b9' + fmt(amt) + '</div>';
+    html += '<div class="cat-bar-bg"><div class="cat-bar" style="width:' + pct + '%;background:' + c.color + '"></div></div>';
+    html += '</div>';
+  });
+  grid.innerHTML = html || '<div class="empty"><div class="big">&#128194;</div>No data for ' + currentMonth + '</div>';
+}
+
+// ── Log
+function renderLog(entries) {
+  var list = document.getElementById('entries-list');
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty"><div class="big">&#129534;</div>No entries for ' + currentMonth + '</div>';
+    return;
+  }
+  var html = '';
+  entries.forEach(function(e) {
+    var cat = CAT[e.category] || { label: e.category, icon: '📦', color: '#9090a8' };
+    html += '<div class="entry-row">';
+    html += '<div class="entry-dot" style="background:' + cat.color + '"></div>';
+    html += '<div class="entry-info">';
+    html += '<div class="entry-cat">' + cat.icon + ' ' + cat.label + '</div>';
+    html += '<div class="entry-note">' + (e.note || '—') + '</div>';
+    html += '<div class="entry-date">' + e.date + '</div>';
+    html += '</div>';
+    html += '<div class="entry-amount">\u20b9' + fmt(e.amount) + '</div>';
+    html += '<button class="entry-del" onclick="deleteEntry(\'' + e.id + '\')">&#10005;</button>';
+    html += '</div>';
+  });
+  list.innerHTML = html;
+}
+
+// ── Submit
+function submitExpense() {
+  var amount = parseFloat(document.getElementById('amount-input').value);
+  var note   = document.getElementById('note-input').value.trim();
+  var date   = document.getElementById('date-input').value;
+  if (!amount || amount <= 0) { showToast('Enter a valid amount', 'err'); return; }
+  if (!selectedCat)           { showToast('Select a category', 'err'); return; }
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'LOGGING...';
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action:'logExpense', amount:amount, category:selectedCat, note:note, date:date })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(j) {
+    if (j.status === 'ok') {
+      showToast('\u20b9' + fmt(amount) + ' logged', 'ok');
+      document.getElementById('amount-input').value = '';
+      document.getElementById('note-input').value = '';
+      document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
+      selectedCat = '';
+      document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('chip-sel'); c.style.background=''; c.style.borderColor=''; c.style.color=''; });
+      loadData();
+    } else { showToast(j.message || 'Error', 'err'); }
+  })
+  .catch(function(){ showToast('Network error', 'err'); })
+  .finally(function(){ btn.disabled = false; btn.textContent = 'LOG EXPENSE'; });
+}
+
+// ── Delete
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  fetch(GAS_URL, { method:'POST', body: JSON.stringify({ action:'deleteExpense', id:id }) })
+    .then(function(r){ return r.json(); })
+    .then(function(j) {
+      if (j.status === 'ok') { showToast('Deleted', 'ok'); loadData(); }
+      else showToast('Delete failed', 'err');
+    })
+    .catch(function(){ showToast('Network error', 'err'); });
+}
+
+// ── Voice
+function toggleVoice() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Voice not supported here', 'err'); return; }
+  if (isListening) { recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang = 'en-IN';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = function() {
+    isListening = true;
+    document.getElementById('voice-btn').classList.add('listening');
+    document.getElementById('voice-hint').textContent = 'Listening... say "320 food Swiggy lunch"';
+  };
+  recognition.onresult = function(e) {
+    var t = e.results[0][0].transcript;
+    document.getElementById('voice-hint').textContent = 'Heard: "' + t + '"';
+    parseVoice(t);
+  };
+  recognition.onerror = function() { showToast('Voice error', 'err'); };
+  recognition.onend = function() {
+    isListening = false;
+    document.getElementById('voice-btn').classList.remove('listening');
+    setTimeout(function(){ document.getElementById('voice-hint').textContent = ''; }, 3000);
+  };
+  recognition.start();
+}
+
+function parseVoice(text) {
+  var m = text.match(/(\d+(?:\.\d+)?)/);
+  if (m) document.getElementById('amount-input').value = m[1];
+  var lower = text.toLowerCase();
+  var kw = {
+    food:    ['food','eat','lunch','dinner','breakfast','restaurant','cafe','swiggy','zomato','meal','coffee','tea'],
+    trans:   ['transport','auto','uber','ola','cab','taxi','bus','train','metro','petrol','fuel','rickshaw'],
+    groc:    ['groceries','grocery','vegetable','fruit','milk','supermarket','bigbasket','dunzo','vegetables'],
+    health:  ['health','medicine','doctor','pharmacy','medical','hospital','clinic','tablet'],
+    util:    ['utility','utilities','bill','electricity','water','wifi','internet','recharge','gas','mobile'],
+    charity: ['charity','donate','donation','temple','tithe','ngo','church'],
+    ent:     ['entertainment','movie','netflix','spotify','game','concert','outing','fun','netflix','prime']
+  };
+  var matched = '';
+  Object.keys(kw).forEach(function(id) {
+    if (!matched && kw[id].some(function(k){ return lower.indexOf(k) !== -1; })) matched = id;
+  });
+  if (matched) selectCat(matched);
+  var note = text.replace(/\d+(?:\.\d+)?/, '').trim();
+  document.getElementById('note-input').value = note;
+}
+
+// ── Charts
+function renderCharts() {
+  var months = summaryData.slice(0,6).reverse();
+  var tCtx = document.getElementById('chart-trend').getContext('2d');
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(tCtx, {
+    type: 'line',
+    data: {
+      labels: months.map(function(m){ return m.month; }),
+      datasets: [{
+        label: 'Total', data: months.map(function(m){ return m.total; }),
+        borderColor:'#e8ff3e', backgroundColor:'rgba(232,255,62,0.08)',
+        borderWidth:2, pointBackgroundColor:'#e8ff3e', pointRadius:5, tension:0.3, fill:true
+      }]
+    },
+    options: baseChartOpts()
+  });
+
+  var cur = summaryData.find(function(m){ return m.month === currentMonth; });
+  var pCtx = document.getElementById('chart-pie').getContext('2d');
+  if (chartPie) chartPie.destroy();
+  var pCanvas = document.getElementById('chart-pie').parentNode;
+  if (cur) {
+    var cats = CATS.filter(function(c){ return cur.categories[c.id]; });
+    chartPie = new Chart(pCtx, {
+      type: 'doughnut',
+      data: {
+        labels: cats.map(function(c){ return c.icon + ' ' + c.label; }),
+        datasets: [{ data: cats.map(function(c){ return cur.categories[c.id]; }),
+          backgroundColor: cats.map(function(c){ return c.color + 'cc'; }),
+          borderColor: cats.map(function(c){ return c.color; }), borderWidth:1.5 }]
+      },
+      options: { responsive:true, plugins:{ legend:{ position:'right', labels:{ color:'#9090a8', font:{size:11}, padding:10 }}, tooltip:{ callbacks:{ label:function(ctx){ return ' \u20b9' + fmt(ctx.raw); }}}}, cutout:'60%' }
+    });
+  }
+
+  var last3 = summaryData.slice(0,3).reverse();
+  var sCtx = document.getElementById('chart-stacked').getContext('2d');
+  if (chartStacked) chartStacked.destroy();
+  chartStacked = new Chart(sCtx, {
+    type: 'bar',
+    data: {
+      labels: last3.map(function(m){ return m.month; }),
+      datasets: CATS.map(function(c){ return {
+        label: c.icon + ' ' + c.label,
+        data: last3.map(function(m){ return m.categories[c.id] || 0; }),
+        backgroundColor: c.color + 'bb', borderColor: c.color, borderWidth:1, borderRadius:4
+      };})
+    },
+    options: stackedOpts()
+  });
+}
+
+function baseChartOpts() {
+  return { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:function(ctx){ return ' \u20b9' + fmt(ctx.raw); }}}},
+    scales:{ x:{ ticks:{color:'#5a5a6e',font:{size:11}}, grid:{color:'#2a2a32'}}, y:{ ticks:{color:'#5a5a6e',font:{size:11},callback:function(v){ return '\u20b9'+fmt(v); }}, grid:{color:'#2a2a32'}}}}; 
+}
+
+function stackedOpts() {
+  var o = baseChartOpts();
+  o.plugins.legend = { display:true, labels:{ color:'#9090a8', font:{size:10}, padding:8, boxWidth:10 }};
+  o.scales.x.stacked = true;
+  o.scales.y.stacked = true;
+  return o;
+}
+
+// ── Toast
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' ' + type : '');
+  setTimeout(function(){ t.className = ''; }, 2800);
+}
+
+// ── Format
+function fmt(n) {
+  n = parseFloat(n) || 0;
+  if (n >= 100000) return (n/100000).toFixed(1) + 'L';
+  if (n >= 1000)   return (n/1000).toFixed(1) + 'k';
+  return Math.round(n).toLocaleString('en-IN');
+}
+</script>
+</body>
+</html>
