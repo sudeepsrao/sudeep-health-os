@@ -162,6 +162,7 @@ const CATS = [
   { id:'util',    label:'Utilities & Bills', icon:'⚡', color:'#a78bfa' },
   { id:'charity', label:'Charity',           icon:'🤝', color:'#ffd166' },
   { id:'ent',     label:'Entertainment',     icon:'🎬', color:'#38bdf8' },
+  { id:'biz',     label:'Business',          icon:'💼', color:'#f97316' },
   { id:'other',   label:'Other',             icon:'📦', color:'#9090a8' }
 ];
 const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
@@ -378,7 +379,8 @@ function parseVoice(text) {
     health:  ['health','medicine','doctor','pharmacy','medical','hospital','clinic','tablet'],
     util:    ['utility','utilities','bill','electricity','water','wifi','internet','recharge','gas','mobile'],
     charity: ['charity','donate','donation','temple','tithe','ngo','church'],
-    ent:     ['entertainment','movie','netflix','spotify','game','concert','outing','fun','netflix','prime']
+    ent:     ['entertainment','movie','netflix','spotify','game','concert','outing','fun','netflix','prime'],
+    biz:     ['business','office','client','meeting','work','stationery','printing','courier']
   };
   var matched = '';
   Object.keys(kw).forEach(function(id) {
