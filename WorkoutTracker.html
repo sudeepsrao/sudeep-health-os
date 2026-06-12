@@ -173,6 +173,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
               <option value="bodyweight">Bodyweight (reps)</option>
               <option value="timed">Timed (seconds)</option>
               <option value="timed_lr">Timed L/R (seconds)</option>
+              <option value="side_reps">Single side — reps</option>
+              <option value="side_time">Single side — time</option>
               <option value="distance">Distance (m)</option>
             </select>
           </div>
@@ -286,10 +288,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
 // ══ PROGRAM DATA ═════════════════════════════════════════════
 const PROGRAM = {
   0: { // Sunday
-    label: 'Sunday — Zone 2 Run',
-    type: 'cardio',
+    label: 'Sunday — Rest / Easy Mobility',
+    type: 'rest',
     exercises: [
-      {name:'Zone 2 Run',cat:'Other',type:'timed',detail:'60–90 min, HR 128–132 bpm nasal breathing',why:'Aerobic base — primary VO2max driver',priority:true},
+      {name:'Walk',cat:'Mobility',type:'timed',detail:'30–45 min easy outdoor walk',why:'Active recovery, blood flow, sunlight',priority:false},
+      {name:'Foam Roll Glutes & Hamstrings',cat:'Mobility',type:'timed',detail:'8 min total, slow passes',why:'Tissue prep for the week ahead',priority:false},
     ]
   },
   1: { // Monday
@@ -304,54 +307,68 @@ const PROGRAM = {
     ]
   },
   2: { // Tuesday
-    label: 'Tuesday — Interval Run',
+    label: 'Tuesday — Swim Intervals',
     type: 'cardio',
     exercises: [
-      {name:'Interval Run',cat:'Other',type:'timed',detail:'8×3 min Zone 4, 90s rest',why:'VO2max stimulus',priority:true},
-      {name:'Sprint Drills',cat:'Explosive',type:'bodyweight',detail:'3×80m, full recovery between',why:'RFD development, neuromuscular',priority:false},
+      {name:'Swim Warm-up',cat:'Other',type:'distance',detail:'200m easy mixed strokes',why:'Prepare for intervals',priority:false},
+      {name:'Swim Intervals',cat:'Other',type:'timed',detail:'6–8 × 2 min hard / 1 min rest',why:'VO2max stimulus while running is paused',priority:true},
+      {name:'Swim Cool-down',cat:'Other',type:'distance',detail:'200m easy',why:'Flush, recover',priority:false},
     ]
   },
   3: { // Wednesday
-    label: 'Wednesday — Home Strength',
+    label: 'Wednesday — Home Strength (Upper + Hip Flexion)',
     type: 'strength',
     exercises: [
+      {name:'Clamshell Activation R',cat:'Mobility',type:'side_reps',side:'R',detail:'2×15 right side, slow controlled',why:'Wake up right glute med before main work',priority:false},
+      {name:'Glute Bridge March',cat:'Legs',type:'timed',detail:'3×10 alternating, hips level',why:'Glute activation primer',priority:true},
       {name:'TRX Row',cat:'Pull',type:'bodyweight',detail:'4×10–12, 1s pause at chest',why:'Pulling volume — pull-up pathway',priority:true},
       {name:'TRX Face Pull',cat:'Pull',type:'bodyweight',detail:'3×15, ER focus at top',why:'Shoulder ER/IR balance (L 0.64)',priority:false},
-      {name:'Band Hip Flexion (L)',cat:'Legs',type:'timed_lr',detail:'3×12 reps, left first',why:'NEW GAP — hip flexion below norm',priority:true},
-      {name:'Band Hip Flexion (R)',cat:'Legs',type:'timed_lr',detail:'3×12 reps',why:'Hip flexion below norm both sides',priority:true},
-      {name:'SL Glute Bridge',cat:'Legs',type:'timed_lr',detail:'3×max hold each side, L first',why:'Left 23s vs right 35s — 34% asymmetry',priority:true},
+      {name:'Band Hip Flexion L',cat:'Legs',type:'side_reps',side:'L',detail:'3×12 reps left side',why:'Hip flexion below norm — left side',priority:true},
+      {name:'Band Hip Flexion R',cat:'Legs',type:'side_reps',side:'R',detail:'3×12 reps right side',why:'Hip flexion below norm — right side',priority:true},
       {name:'DB Push Press',cat:'Push',type:'weighted',detail:'3×10 @ 12–16 kg',why:'Shoulder flexion strength gap',priority:false},
-      {name:'Pallof Press',cat:'Core',type:'weighted',detail:'3×10 each side @ 32 kg',why:'Anti-rotation, spine protection',priority:false},
-      {name:'Wrist Roller / Reverse Curl (L)',cat:'Grip',type:'bodyweight',detail:'2×15, left arm only',why:'Left wrist flexion 100N vs 112N norm',priority:true},
+      {name:'Pallof Press',cat:'Core',type:'weighted',detail:'3×10 each side @ light band',why:'Anti-rotation, spine protection',priority:false},
+      {name:'Wrist Roller L',cat:'Grip',type:'side_reps',side:'L',detail:'2×15 left arm only',why:'Left wrist flexion 100N vs 112N norm',priority:true},
       {name:'Dead Hang',cat:'Pull',type:'timed',detail:'2×max',why:'Grip + spinal decompression',priority:false},
     ]
   },
   4: { // Thursday
-    label: 'Thursday — Rest',
-    type: 'rest',
-    exercises: []
+    label: 'Thursday — Glute Activation & RFD Focus',
+    type: 'strength',
+    exercises: [
+      {name:'Clamshell Activation R',cat:'Mobility',type:'side_reps',side:'R',detail:'2×15 right side',why:'Prime right glute med',priority:true},
+      {name:'Quadruped Hip Ext R',cat:'Legs',type:'side_reps',side:'R',detail:'2×12 right side, 2s pause at top',why:'Isolated right glute activation',priority:true},
+      {name:'Banded Hip Thrust',cat:'Legs',type:'bodyweight',detail:'3×15 with 2s hold at top, knee band',why:'Glute strength — zero spine load',priority:true},
+      {name:'SL Glute Bridge L',cat:'Legs',type:'side_time',side:'L',detail:'3× max hold, left side',why:'Left 23s vs right 35s — close the gap',priority:true},
+      {name:'SL Glute Bridge R',cat:'Legs',type:'side_time',side:'R',detail:'3× max hold, right side',why:'Track right side baseline',priority:true},
+      {name:'Band Hip Hinge Snap R',cat:'Explosive',type:'side_reps',side:'R',detail:'3×8 explosive, full reset each rep',why:'Right hip extension RFD 12.6% — explosive intent',priority:true},
+      {name:'Band Hip Hinge Snap L',cat:'Explosive',type:'side_reps',side:'L',detail:'3×8 explosive, full reset',why:'Match RFD pattern bilaterally',priority:false},
+      {name:'Copenhagen Plank L',cat:'Core',type:'side_time',side:'L',detail:'2× max hold, top knee on bench',why:'Left adductor + glute med stability',priority:false},
+    ]
   },
   5: { // Friday
-    label: 'Friday — Swimming',
+    label: 'Friday — Long Swim Zone 2',
     type: 'cardio',
     exercises: [
-      {name:'Breaststroke',cat:'Other',type:'distance',detail:'40 min, target 600–700m',why:'Low axial load cardio',priority:true},
-      {name:'Freestyle',cat:'Other',type:'distance',detail:'2–4 laps technique work',why:'Shoulder flexion range stimulus',priority:false},
+      {name:'Long Swim Zone 2',cat:'Other',type:'distance',detail:'700–800m steady breaststroke, HR ~130',why:'Aerobic base — replaces long run',priority:true},
+      {name:'Freestyle Technique',cat:'Other',type:'distance',detail:'4–6 laps focused on shoulder flexion ROM',why:'Shoulder flexion range under low load',priority:false},
     ]
   },
   6: { // Saturday
-    label: 'Saturday — Full Gym',
+    label: 'Saturday — Full Gym (Squat + Hip Thrust + Pull)',
     type: 'strength',
     exercises: [
-      {name:'Trap Bar Deadlift / Jump Squat',cat:'Explosive',type:'weighted',detail:'3×5 @ 40–50 kg — explosive intent, full reset',why:'Left hip ext RFD 12.6% — explosive work essential',priority:true},
-      {name:'Barbell Squat',cat:'Legs',type:'weighted',detail:'4×4–6 @ 62–70 kg, belt optional',why:'Biggest strength gap — 62 vs 102 kg target',priority:true},
-      {name:'Lying Leg Curl',cat:'Legs',type:'weighted',detail:'3×10 before squat warmup',why:'Knee flex/ext ratio 0.42 — hamstring priority',priority:true},
-      {name:'Cable Hip Flexion',cat:'Legs',type:'weighted',detail:'3×10 each side',why:'Hip flexion below norm — spine-safe loading',priority:true},
-      {name:'Weighted Pull-up / Lat Pulldown',cat:'Pull',type:'weighted',detail:'4×max, add scap pause at bottom',why:'Pull-ups stalled at 5 — 4× weekly pulling',priority:true},
-      {name:'Cable Row',cat:'Pull',type:'weighted',detail:'3×6–8 @ 63+ kg',why:'Pulling volume + upper back',priority:false},
+      {name:'Clamshell Activation R',cat:'Mobility',type:'side_reps',side:'R',detail:'2×15 right side',why:'Glute primer before loaded work',priority:false},
+      {name:'Trap Bar Jump',cat:'Explosive',type:'weighted',detail:'3×5 @ 40–50 kg — explosive intent, full reset',why:'Hip extension RFD — neural drive',priority:true},
+      {name:'Barbell Hip Thrust',cat:'Legs',type:'weighted',detail:'4×8 progressing 40 → 70 kg, 2s top hold',why:'Glute strength — no spine load (T-score -2.2)',priority:true},
+      {name:'Lying Leg Curl',cat:'Legs',type:'weighted',detail:'3×10 before squats',why:'Knee Flex/Ext ratio target >0.50',priority:true},
+      {name:'Barbell Squat',cat:'Legs',type:'weighted',detail:'4×4–6 @ 62–70 kg',why:'Squat strength gap — 62 vs 102 kg target',priority:true},
+      {name:'Romanian Deadlift',cat:'Legs',type:'weighted',detail:'3×8 @ 60–70 kg, stretch + squeeze',why:'Hamstring + glute mass for ratio',priority:true},
+      {name:'Cable Hip Flexion L',cat:'Legs',type:'side_reps',side:'L',detail:'3×10 left side',why:'Hip flexion below norm, spine-safe loading',priority:true},
+      {name:'Cable Hip Flexion R',cat:'Legs',type:'side_reps',side:'R',detail:'3×10 right side',why:'Hip flexion below norm, spine-safe loading',priority:true},
+      {name:'Weighted Pull-up / Lat Pulldown',cat:'Pull',type:'weighted',detail:'4×max with 1s scap pause at bottom',why:'Pull-up pathway — shoulder flexion limiter',priority:true},
+      {name:'Cable Row',cat:'Pull',type:'weighted',detail:'3×6–8 @ 63+ kg',why:'Upper back + pull volume',priority:false},
       {name:'DB Bench Press',cat:'Push',type:'weighted',detail:'3×8 @ 24–28 kg/hand',why:'Pressing strength + bone loading',priority:false},
-      {name:'DB Shoulder Press',cat:'Push',type:'weighted',detail:'3×8–10 @ 18–20 kg',why:'Shoulder flexion strength gap',priority:false},
-      {name:'Nordic Curl',cat:'Legs',type:'weighted',detail:'3×6 @ 35+ kg',why:'Knee flex/ext ratio + hamstring',priority:false},
+      {name:'Nordic Curl',cat:'Legs',type:'weighted',detail:'3×5 eccentric focus',why:'Hamstring eccentric — closes the ratio',priority:false},
       {name:'Farmers Carry',cat:'Grip',type:'timed',detail:'3×60–75s @ 20 kg/hand',why:'Grip, bone loading, core bracing',priority:false},
     ]
   }
@@ -404,6 +421,14 @@ function formatSetVal(log) {
   if (log.log_type === 'timed') return `${log.value1}s`;
   if (log.log_type === 'timed_lr') return `L: ${log.value1}s  R: ${log.value2}s`;
   if (log.log_type === 'distance') return `${log.value1} m`;
+  if (log.log_type === 'side_reps') {
+    const side = log.value3 || log.notes || '';
+    return side ? `${side}: ${log.value1} reps` : `${log.value1} reps`;
+  }
+  if (log.log_type === 'side_time') {
+    const side = log.value3 || log.notes || '';
+    return side ? `${side}: ${log.value1}s` : `${log.value1}s`;
+  }
   return `${log.value1}`;
 }
 
@@ -538,6 +563,28 @@ function renderLogForm(ex, i) {
     <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','distance')">+ Log Set</button>
   </div>`;
 
+  if (ex.type === 'side_reps') {
+    const sideLabel = ex.side === 'L' ? 'Left' : ex.side === 'R' ? 'Right' : 'Side';
+    return `<div class="log-form" style="margin-top:10px">
+      <div class="form-row cols2">
+        <div><label class="form-label">${sideLabel} reps</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+        <div><label class="form-label">note (optional)</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+      </div>
+      <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','side_reps','${ex.side||''}')">+ Log Set</button>
+    </div>`;
+  }
+
+  if (ex.type === 'side_time') {
+    const sideLabel = ex.side === 'L' ? 'Left' : ex.side === 'R' ? 'Right' : 'Side';
+    return `<div class="log-form" style="margin-top:10px">
+      <div class="form-row cols2">
+        <div><label class="form-label">${sideLabel} seconds</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+        <div><label class="form-label">note (optional)</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+      </div>
+      <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','side_time','${ex.side||''}')">+ Log Set</button>
+    </div>`;
+  }
+
   return '';
 }
 
@@ -548,6 +595,8 @@ function renderQuickFields() {
   else if (type === 'bodyweight') c.innerHTML = `<div><label class="form-label">reps</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div>`;
   else if (type === 'timed') c.innerHTML = `<div><label class="form-label">seconds</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div>`;
   else if (type === 'timed_lr') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">Left (s)</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div><div><label class="form-label">Right (s)</label><input type="number" id="qa-v2" min="0" placeholder="0"/></div></div>`;
+  else if (type === 'side_reps') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">Side</label><select id="qa-side"><option value="L">Left</option><option value="R">Right</option></select></div><div><label class="form-label">Reps</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div></div>`;
+  else if (type === 'side_time') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">Side</label><select id="qa-side"><option value="L">Left</option><option value="R">Right</option></select></div><div><label class="form-label">Seconds</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div></div>`;
   else if (type === 'distance') c.innerHTML = `<div><label class="form-label">metres</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div>`;
 }
 
@@ -565,14 +614,18 @@ function toggleCard(id) {
 }
 
 // ══ LOGGING ══════════════════════════════════════════════════
-function logSet(idx, name, cat, type) {
+function logSet(idx, name, cat, type, side) {
+  side = side || '';
   const v1 = parseFloat(document.getElementById(`f${idx}-v1`)?.value) || 0;
   const v2 = parseFloat(document.getElementById(`f${idx}-v2`)?.value) || 0;
   const v3 = document.getElementById(`f${idx}-v3`)?.value || '';
 
   if (type === 'weighted' && (!v1 || !v2)) { toast('Enter kg and reps'); return; }
-  if ((type === 'bodyweight' || type === 'timed' || type === 'distance') && !v1) { toast('Enter a value'); return; }
+  if ((type === 'bodyweight' || type === 'timed' || type === 'distance' || type === 'side_reps' || type === 'side_time') && !v1) { toast('Enter a value'); return; }
   if (type === 'timed_lr' && (!v1 || !v2)) { toast('Enter both L and R'); return; }
+
+  // For single-side exercises, store the side label in value3 so we can show it back
+  const sideLabel = side === 'L' ? 'L' : side === 'R' ? 'R' : '';
 
   const entry = {
     id: 'l' + Date.now(),
@@ -583,7 +636,7 @@ function logSet(idx, name, cat, type) {
     log_type: type,
     value1: v1,
     value2: type === 'weighted' ? v2 : (type === 'timed_lr' ? v2 : ''),
-    value3: v3,
+    value3: (type === 'side_reps' || type === 'side_time') ? sideLabel : v3,
     notes: v3,
     logged_at: new Date().toISOString()
   };
@@ -592,6 +645,10 @@ function logSet(idx, name, cat, type) {
   localStorage.setItem('wt_logs', JSON.stringify(localLogs));
   saveToGAS(entry);
   toast('Logged ✓');
+  // Clear the form
+  const v1El = document.getElementById(`f${idx}-v1`); if (v1El) v1El.value = '';
+  const v2El = document.getElementById(`f${idx}-v2`); if (v2El) v2El.value = '';
+  const v3El = document.getElementById(`f${idx}-v3`); if (v3El) v3El.value = '';
   renderLog();
 }
 
@@ -603,6 +660,8 @@ function logQuickAdd() {
 
   const v1 = parseFloat(document.getElementById('qa-v1')?.value) || 0;
   const v2 = parseFloat(document.getElementById('qa-v2')?.value) || 0;
+  const sideEl = document.getElementById('qa-side');
+  const side = sideEl ? sideEl.value : '';
   if (!v1) { toast('Enter a value'); return; }
 
   const entry = {
@@ -610,7 +669,8 @@ function logQuickAdd() {
     date: currentDate,
     session: PROGRAM[dayOfWeek(currentDate)]?.label || '',
     exercise: name, category: cat, log_type: type,
-    value1: v1, value2: v2, value3: '',
+    value1: v1, value2: v2,
+    value3: (type === 'side_reps' || type === 'side_time') ? side : '',
     notes: '',
     logged_at: new Date().toISOString()
   };
