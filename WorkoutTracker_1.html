@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Train"/>
+<meta name="theme-color" content="#0f172a"/>
+<title>Sudeep — Workout Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;
+  --accent:#22d3ee;--accent2:#a78bfa;--warn:#f59e0b;--danger:#f87171;--green:#4ade80;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --radius:10px;--font-mono:'SF Mono','Fira Code','Consolas',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;min-height:100vh;padding-bottom:80px}
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--bg3);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;gap:3px;border:none;background:none;color:var(--text2);font-size:10px;cursor:pointer;transition:color .15s}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:20px;height:20px;stroke-width:1.8}
+/* PAGES */
+.page{display:none;padding:16px;max-width:480px;margin:0 auto}
+.page.active{display:block}
+/* HEADER */
+.page-header{padding:16px 16px 8px;max-width:480px;margin:0 auto;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--bg2)}
+.page-title{font-size:13px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+.day-label{font-size:22px;font-weight:600;color:var(--text);margin-top:2px}
+/* DATE NAV */
+.date-nav{display:flex;align-items:center;gap:8px;margin-top:8px}
+.date-nav input[type=date]{flex:1;background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:14px}
+.date-nav input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.6}
+.icon-btn{width:36px;height:36px;border-radius:8px;background:var(--bg2);border:1px solid var(--bg3);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+/* CARDS */
+.card{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--bg3);margin-bottom:12px;overflow:hidden}
+.card-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.card-head-left{display:flex;align-items:center;gap:10px}
+.ex-name{font-size:15px;font-weight:500;color:var(--text)}
+.ex-meta{font-size:12px;color:var(--text2);margin-top:1px}
+.cat-pill{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.cat-pull{background:#1e3a5f;color:#7dd3fc}
+.cat-push{background:#3b1f5e;color:#c4b5fd}
+.cat-legs{background:#14402e;color:#6ee7b7}
+.cat-core{background:#422006;color:#fcd34d}
+.cat-mobility{background:#1a1a3e;color:#a5b4fc}
+.cat-explosive{background:#4a1515;color:#fca5a5}
+.cat-grip{background:#2a1a00;color:#fbbf24}
+.card-body{display:none;padding:0 14px 14px;border-top:1px solid var(--bg3)}
+.card-body.open{display:block}
+/* SETS */
+.sets-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.set-row{background:var(--bg3);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+.set-vals{font-family:var(--font-mono);font-size:14px;color:var(--text)}
+.set-note{font-size:11px;color:var(--text2);margin-top:2px}
+.del-btn{width:26px;height:26px;border-radius:6px;background:rgba(248,113,113,.15);border:none;color:var(--danger);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+/* LOG FORM */
+.log-form{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.form-row{display:grid;gap:8px}
+.form-row.cols2{grid-template-columns:1fr 1fr}
+.form-row.cols3{grid-template-columns:1fr 1fr 1fr}
+.form-label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block}
+input[type=number],input[type=text],textarea,select{width:100%;background:var(--bg);border:1px solid var(--bg3);border-radius:8px;color:var(--text);padding:9px 11px;font-size:15px;font-family:inherit}
+input[type=number]{font-family:var(--font-mono)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.log-btn{background:var(--accent);color:#0f172a;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:4px}
+.log-btn:active{opacity:.85}
+/* DONE BADGE */
+.done-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--green);font-weight:500}
+/* PROGRESS PAGE */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.metric-card{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--bg3);padding:14px}
+.metric-val{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--text)}
+.metric-unit{font-size:12px;color:var(--text2);margin-left:3px}
+.metric-label{font-size:11px;color:var(--text2);margin-top:3px}
+.metric-delta{font-size:11px;margin-top:4px;font-weight:500}
+.delta-up{color:var(--green)}
+.delta-down{color:var(--danger)}
+/* CHART AREA */
+.chart-wrap{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.chart-title{font-size:13px;color:var(--text2);margin-bottom:10px}
+.chart-container{position:relative;width:100%;height:180px}
+/* PROGRAM PAGE */
+.day-section{margin-bottom:20px}
+.day-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;padding:6px 0;border-bottom:1px solid var(--bg3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.day-today{color:var(--accent)}
+.program-ex{background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:6px;border-left:3px solid var(--bg3)}
+.program-ex.priority{border-left-color:var(--accent)}
+.program-ex-name{font-size:14px;font-weight:500;color:var(--text)}
+.program-ex-detail{font-size:12px;color:var(--text2);margin-top:3px}
+.program-ex-why{font-size:11px;color:var(--text3);margin-top:4px;font-style:italic}
+/* PROGRESS LOG FORM */
+.progress-form{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--bg3);padding:14px;margin-bottom:16px}
+.progress-form h3{font-size:13px;color:var(--text2);margin-bottom:10px}
+.select-wrap select{background:var(--bg);border:1px solid var(--bg3);border-radius:8px;color:var(--text);padding:9px 11px;font-size:14px;width:100%}
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg3);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1}
+/* SECTION LABEL */
+.section-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px}
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px 16px;color:var(--text2);font-size:14px}
+.empty svg{width:36px;height:36px;stroke:var(--text3);margin-bottom:10px}
+/* HISTORY ITEM */
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3)}
+.history-item:last-child{border-bottom:none}
+.history-date{font-size:12px;color:var(--text2)}
+.history-val{font-family:var(--font-mono);font-size:14px;color:var(--text);font-weight:500}
+/* CONFIG */
+.config-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bg3)}
+.config-label{font-size:14px;color:var(--text)}
+.config-sub{font-size:12px;color:var(--text2)}
+.config-input{background:var(--bg);border:1px solid var(--bg3);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px;width:100%;margin-top:6px;font-family:var(--font-mono)}
+.save-btn{background:var(--accent);color:#0f172a;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;width:100%}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADERS ══════════════════════════════════════════════ -->
+<div class="page-header" id="log-header" style="display:block">
+  <div class="page-title">Workout Log</div>
+  <div class="day-label" id="log-day-label">Wednesday — Home</div>
+  <div class="date-nav">
+    <div class="icon-btn" onclick="shiftDate(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+    </div>
+    <input type="date" id="log-date" onchange="onDateChange()"/>
+    <div class="icon-btn" onclick="shiftDate(1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGES ══════════════════════════════════════════════════ -->
+
+<!-- LOG PAGE -->
+<div class="page active" id="page-log" style="padding-top:8px">
+  <div id="log-exercises"></div>
+  <div class="section-label">Add Exercise</div>
+  <div class="card" id="quick-add-card">
+    <div class="card-head" onclick="toggleCard('quick-add-body')">
+      <div class="card-head-left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span style="font-size:14px;color:var(--text2)">Log something else</span>
+      </div>
+    </div>
+    <div class="card-body" id="quick-add-body">
+      <div class="log-form">
+        <div>
+          <label class="form-label">Exercise name</label>
+          <input type="text" id="qa-name" placeholder="e.g. Cable Hip Flexion" list="ex-datalist"/>
+          <datalist id="ex-datalist"></datalist>
+        </div>
+        <div class="form-row cols2">
+          <div>
+            <label class="form-label">Category</label>
+            <select id="qa-cat">
+              <option value="Pull">Pull</option>
+              <option value="Push">Push</option>
+              <option value="Legs">Legs</option>
+              <option value="Core">Core</option>
+              <option value="Mobility">Mobility</option>
+              <option value="Explosive">Explosive</option>
+              <option value="Grip">Grip</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Log type</label>
+            <select id="qa-type" onchange="renderQuickFields()">
+              <option value="weighted">Weighted (kg × reps)</option>
+              <option value="bodyweight">Bodyweight (reps)</option>
+              <option value="timed">Timed (seconds)</option>
+              <option value="timed_lr">Timed L/R (seconds)</option>
+              <option value="side_reps">Single side — reps</option>
+              <option value="side_time">Single side — time</option>
+              <option value="distance">Distance (m)</option>
+            </select>
+          </div>
+        </div>
+        <div id="qa-fields"></div>
+        <button class="log-btn" onclick="logQuickAdd()">Log Set</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRAM PAGE -->
+<div class="page" id="page-program">
+  <div style="padding-top:8px" id="program-content"></div>
+</div>
+
+<!-- PROGRESS PAGE -->
+<div class="page" id="page-progress">
+  <div style="padding-top:8px">
+    <div class="section-label">Key Benchmarks</div>
+    <div class="metric-grid" id="benchmark-grid"></div>
+
+    <div class="section-label">Log a Benchmark</div>
+    <div class="progress-form">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label class="form-label">Metric</label>
+          <select id="prog-metric" onchange="renderProgFields()">
+            <option value="">— select —</option>
+            <option value="Pull-ups">Pull-ups (reps)</option>
+            <option value="Dead Hang">Dead Hang (s)</option>
+            <option value="Wall Sit">Wall Sit (s)</option>
+            <option value="SL Glute Bridge L">SL Glute Bridge Left (s)</option>
+            <option value="SL Glute Bridge R">SL Glute Bridge Right (s)</option>
+            <option value="Squat 1RM">Squat 1RM (kg)</option>
+            <option value="Deadlift 1RM">Deadlift 1RM (kg)</option>
+            <option value="Bench 1RM">Bench 1RM (kg)</option>
+            <option value="Grip L">Grip Left (kg)</option>
+            <option value="Grip R">Grip Right (kg)</option>
+            <option value="Push-ups">Push-ups (reps)</option>
+            <option value="Broad Jump">Broad Jump (cm)</option>
+            <option value="Reaction Time">Reaction Time (s)</option>
+          </select>
+        </div>
+        <div id="prog-fields"></div>
+        <button class="log-btn" onclick="logProgressEntry()">Save Benchmark</button>
+      </div>
+    </div>
+
+    <div class="section-label">Trend — Pull-ups</div>
+    <div class="chart-wrap">
+      <div class="chart-container"><canvas id="pullup-chart" role="img" aria-label="Pull-up progress over time"></canvas></div>
+    </div>
+
+    <div class="section-label">Trend — Squat 1RM</div>
+    <div class="chart-wrap">
+      <div class="chart-container"><canvas id="squat-chart" role="img" aria-label="Squat 1RM progress"></canvas></div>
+    </div>
+
+    <div class="section-label">History</div>
+    <div id="progress-history"></div>
+  </div>
+</div>
+
+<!-- CONFIG PAGE -->
+<div class="page" id="page-config">
+  <div style="padding-top:8px">
+    <div class="section-label">Backend Connection</div>
+    <div class="card" style="padding:14px">
+      <div class="config-label" style="font-weight:500">Google Apps Script URL</div>
+      <div class="config-sub" style="margin-top:4px">Paste your deployed GAS web app URL here</div>
+      <input class="config-input" id="cfg-gas-url" type="text" placeholder="https://script.google.com/macros/s/..."/>
+      <button class="save-btn" onclick="saveConfig()">Save & Test Connection</button>
+      <div id="cfg-status" style="font-size:12px;margin-top:8px;color:var(--text2)"></div>
+    </div>
+
+    <div class="section-label" style="margin-top:20px">About</div>
+    <div class="card" style="padding:14px">
+      <div style="font-size:13px;color:var(--text2);line-height:1.6">
+        <div style="margin-bottom:6px"><span style="color:var(--accent);font-family:var(--font-mono)">v1.0</span> — Sudeep Workout Tracker</div>
+        <div>Logs every set to Google Sheets. Tracks benchmarks over time. Program baked in from June 2026 assessment.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ════════════════════════════════════════════ -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-log" onclick="switchPage('log')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+    Log
+  </button>
+  <button class="nav-btn" id="nav-program" onclick="switchPage('program')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    Program
+  </button>
+  <button class="nav-btn" id="nav-progress" onclick="switchPage('progress')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Progress
+  </button>
+  <button class="nav-btn" id="nav-config" onclick="switchPage('config')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Setup
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ══ PROGRAM DATA ═════════════════════════════════════════════
+const PROGRAM = {
+  0: { // Sunday
+    label: 'Sunday — Rest / Easy Mobility',
+    type: 'rest',
+    exercises: [
+      {name:'Walk',cat:'Mobility',type:'timed',detail:'30–45 min easy outdoor walk',why:'Active recovery, blood flow, sunlight',priority:false},
+      {name:'Foam Roll Glutes & Hamstrings',cat:'Mobility',type:'timed',detail:'8 min total, slow passes',why:'Tissue prep for the week ahead',priority:false},
+    ]
+  },
+  1: { // Monday
+    label: 'Monday — Mobility & Recovery',
+    type: 'mobility',
+    exercises: [
+      {name:'Hip 90/90 Rotations',cat:'Mobility',type:'timed',detail:'2×60s each side',why:'Maintain hip IR gains',priority:false},
+      {name:'Shoulder CARs',cat:'Mobility',type:'timed',detail:'2×10 slow rotations each',why:'Maintain shoulder IR',priority:false},
+      {name:'Thoracic Rotation',cat:'Mobility',type:'timed',detail:'2×10 each side',why:'Spinal mobility, bone loading',priority:false},
+      {name:'Dead Hang',cat:'Pull',type:'timed',detail:'2×max, rest 3 min',why:'Spinal decompression + grip maintenance',priority:true},
+      {name:'Couch Stretch',cat:'Mobility',type:'timed',detail:'2×60s each side',why:'Hip flexor maintenance',priority:false},
+    ]
+  },
+  2: { // Tuesday
+    label: 'Tuesday — Swim Intervals',
+    type: 'cardio',
+    exercises: [
+      {name:'Swim Warm-up',cat:'Other',type:'distance',detail:'200m easy mixed strokes',why:'Prepare for intervals',priority:false},
+      {name:'Swim Intervals',cat:'Other',type:'timed',detail:'6–8 × 2 min hard / 1 min rest',why:'VO2max stimulus while running is paused',priority:true},
+      {name:'Swim Cool-down',cat:'Other',type:'distance',detail:'200m easy',why:'Flush, recover',priority:false},
+    ]
+  },
+  3: { // Wednesday
+    label: 'Wednesday — Home Strength (Upper + Hip Flexion)',
+    type: 'strength',
+    exercises: [
+      {name:'Clamshell Activation R',cat:'Mobility',type:'side_reps',side:'R',detail:'2×15 right side, slow controlled',why:'Wake up right glute med before main work',priority:false},
+      {name:'Glute Bridge March',cat:'Legs',type:'timed',detail:'3×10 alternating, hips level',why:'Glute activation primer',priority:true},
+      {name:'TRX Row',cat:'Pull',type:'bodyweight',detail:'4×10–12, 1s pause at chest',why:'Pulling volume — pull-up pathway',priority:true},
+      {name:'TRX Face Pull',cat:'Pull',type:'bodyweight',detail:'3×15, ER focus at top',why:'Shoulder ER/IR balance (L 0.64)',priority:false},
+      {name:'Band Hip Flexion L',cat:'Legs',type:'side_reps',side:'L',detail:'3×12 reps left side',why:'Hip flexion below norm — left side',priority:true},
+      {name:'Band Hip Flexion R',cat:'Legs',type:'side_reps',side:'R',detail:'3×12 reps right side',why:'Hip flexion below norm — right side',priority:true},
+      {name:'DB Push Press',cat:'Push',type:'weighted',detail:'3×10 @ 12–16 kg',why:'Shoulder flexion strength gap',priority:false},
+      {name:'Pallof Press',cat:'Core',type:'weighted',detail:'3×10 each side @ light band',why:'Anti-rotation, spine protection',priority:false},
+      {name:'Wrist Roller L',cat:'Grip',type:'side_reps',side:'L',detail:'2×15 left arm only',why:'Left wrist flexion 100N vs 112N norm',priority:true},
+      {name:'Dead Hang',cat:'Pull',type:'timed',detail:'2×max',why:'Grip + spinal decompression',priority:false},
+    ]
+  },
+  4: { // Thursday
+    label: 'Thursday — Glute Activation & RFD Focus',
+    type: 'strength',
+    exercises: [
+      {name:'Clamshell Activation R',cat:'Mobility',type:'side_reps',side:'R',detail:'2×15 right side',why:'Prime right glute med',priority:true},
+      {name:'Quadruped Hip Ext R',cat:'Legs',type:'side_reps',side:'R',detail:'2×12 right side, 2s pause at top',why:'Isolated right glute activation',priority:true},
+      {name:'Banded Hip Thrust',cat:'Legs',type:'bodyweight',detail:'3×15 with 2s hold at top, knee band',why:'Glute strength — zero spine load',priority:true},
+      {name:'SL Glute Bridge L',cat:'Legs',type:'side_time',side:'L',detail:'3× max hold, left side',why:'Left 23s vs right 35s — close the gap',priority:true},
+      {name:'SL Glute Bridge R',cat:'Legs',type:'side_time',side:'R',detail:'3× max hold, right side',why:'Track right side baseline',priority:true},
+      {name:'Band Hip Hinge Snap R',cat:'Explosive',type:'side_reps',side:'R',detail:'3×8 explosive, full reset each rep',why:'Right hip extension RFD 12.6% — explosive intent',priority:true},
+      {name:'Band Hip Hinge Snap L',cat:'Explosive',type:'side_reps',side:'L',detail:'3×8 explosive, full reset',why:'Match RFD pattern bilaterally',priority:false},
+      {name:'Copenhagen Plank L',cat:'Core',type:'side_time',side:'L',detail:'2× max hold, top knee on bench',why:'Left adductor + glute med stability',priority:false},
+    ]
+  },
+  5: { // Friday
+    label: 'Friday — Long Swim Zone 2',
+    type: 'cardio',
+    exercises: [
+      {name:'Long Swim Zone 2',cat:'Other',type:'distance',detail:'700–800m steady breaststroke, HR ~130',why:'Aerobic base — replaces long run',priority:true},
+      {name:'Freestyle Technique',cat:'Other',type:'distance',detail:'4–6 laps focused on shoulder flexion ROM',why:'Shoulder flexion range under low load',priority:false},
+    ]
+  },
+  6: { // Saturday
+    label: 'Saturday — Full Gym (Squat + Hip Thrust + Pull)',
+    type: 'strength',
+    exercises: [
+      {name:'Clamshell Activation R',cat:'Mobility',type:'side_reps',side:'R',detail:'2×15 right side',why:'Glute primer before loaded work',priority:false},
+      {name:'Trap Bar Jump',cat:'Explosive',type:'weighted',detail:'3×5 @ 40–50 kg — explosive intent, full reset',why:'Hip extension RFD — neural drive',priority:true},
+      {name:'Barbell Hip Thrust',cat:'Legs',type:'weighted',detail:'4×8 progressing 40 → 70 kg, 2s top hold',why:'Glute strength — no spine load (T-score -2.2)',priority:true},
+      {name:'Lying Leg Curl',cat:'Legs',type:'weighted',detail:'3×10 before squats',why:'Knee Flex/Ext ratio target >0.50',priority:true},
+      {name:'Barbell Squat',cat:'Legs',type:'weighted',detail:'4×4–6 @ 62–70 kg',why:'Squat strength gap — 62 vs 102 kg target',priority:true},
+      {name:'Romanian Deadlift',cat:'Legs',type:'weighted',detail:'3×8 @ 60–70 kg, stretch + squeeze',why:'Hamstring + glute mass for ratio',priority:true},
+      {name:'Cable Hip Flexion L',cat:'Legs',type:'side_reps',side:'L',detail:'3×10 left side',why:'Hip flexion below norm, spine-safe loading',priority:true},
+      {name:'Cable Hip Flexion R',cat:'Legs',type:'side_reps',side:'R',detail:'3×10 right side',why:'Hip flexion below norm, spine-safe loading',priority:true},
+      {name:'Weighted Pull-up / Lat Pulldown',cat:'Pull',type:'weighted',detail:'4×max with 1s scap pause at bottom',why:'Pull-up pathway — shoulder flexion limiter',priority:true},
+      {name:'Cable Row',cat:'Pull',type:'weighted',detail:'3×6–8 @ 63+ kg',why:'Upper back + pull volume',priority:false},
+      {name:'DB Bench Press',cat:'Push',type:'weighted',detail:'3×8 @ 24–28 kg/hand',why:'Pressing strength + bone loading',priority:false},
+      {name:'Nordic Curl',cat:'Legs',type:'weighted',detail:'3×5 eccentric focus',why:'Hamstring eccentric — closes the ratio',priority:false},
+      {name:'Farmers Carry',cat:'Grip',type:'timed',detail:'3×60–75s @ 20 kg/hand',why:'Grip, bone loading, core bracing',priority:false},
+    ]
+  }
+};
+
+// Current baselines for benchmarks
+const BASELINES = {
+  'Pull-ups': {val:5, unit:'reps', target:10},
+  'Dead Hang': {val:85, unit:'s', target:120},
+  'Wall Sit': {val:85, unit:'s', target:120},
+  'SL Glute Bridge L': {val:23, unit:'s', target:35},
+  'SL Glute Bridge R': {val:35, unit:'s', target:45},
+  'Squat 1RM': {val:62, unit:'kg', target:102},
+  'Deadlift 1RM': {val:95, unit:'kg', target:120},
+  'Bench 1RM': {val:67, unit:'kg', target:90},
+  'Grip L': {val:41.7, unit:'kg', target:50},
+  'Grip R': {val:48.5, unit:'kg', target:55},
+  'Push-ups': {val:20, unit:'reps', target:30},
+  'Broad Jump': {val:192.5, unit:'cm', target:200},
+  'Reaction Time': {val:0.237, unit:'s', target:0.2},
+};
+
+// ══ STATE ════════════════════════════════════════════════════
+let GAS_URL = localStorage.getItem('wt_gas_url') || '';
+let currentDate = todayStr();
+let localLogs = JSON.parse(localStorage.getItem('wt_logs') || '[]');
+let pullupChart, squatChart;
+
+// ══ UTILS ════════════════════════════════════════════════════
+function todayStr() {
+  return new Date().toLocaleDateString('sv-SE');
+}
+function dayOfWeek(dateStr) {
+  return new Date(dateStr + 'T12:00:00').getDay();
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function catClass(cat) {
+  const m = {Pull:'cat-pull',Push:'cat-push',Legs:'cat-legs',Core:'cat-core',
+    Mobility:'cat-mobility',Explosive:'cat-explosive',Grip:'cat-grip'};
+  return m[cat] || '';
+}
+function formatSetVal(log) {
+  if (log.log_type === 'weighted') return `${log.value1} kg × ${log.value2} reps`;
+  if (log.log_type === 'bodyweight') return `${log.value1} reps`;
+  if (log.log_type === 'timed') return `${log.value1}s`;
+  if (log.log_type === 'timed_lr') return `L: ${log.value1}s  R: ${log.value2}s`;
+  if (log.log_type === 'distance') return `${log.value1} m`;
+  if (log.log_type === 'side_reps') {
+    const side = log.value3 || log.notes || '';
+    return side ? `${side}: ${log.value1} reps` : `${log.value1} reps`;
+  }
+  if (log.log_type === 'side_time') {
+    const side = log.value3 || log.notes || '';
+    return side ? `${side}: ${log.value1}s` : `${log.value1}s`;
+  }
+  return `${log.value1}`;
+}
+
+// ══ PAGE SWITCHING ════════════════════════════════════════════
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  const h = document.getElementById('log-header');
+  h.style.display = page === 'log' ? 'block' : 'none';
+  if (page === 'log') renderLog();
+  if (page === 'program') renderProgram();
+  if (page === 'progress') renderProgress();
+  if (page === 'config') {
+    const u = document.getElementById('cfg-gas-url');
+    if (u) u.value = GAS_URL;
+  }
+}
+
+// ══ DATE NAV ═════════════════════════════════════════════════
+function initDate() {
+  const el = document.getElementById('log-date');
+  el.value = currentDate;
+  updateDayLabel();
+}
+function shiftDate(d) {
+  const dt = new Date(currentDate + 'T12:00:00');
+  dt.setDate(dt.getDate() + d);
+  currentDate = dt.toLocaleDateString('sv-SE');
+  document.getElementById('log-date').value = currentDate;
+  updateDayLabel();
+  renderLog();
+}
+function onDateChange() {
+  currentDate = document.getElementById('log-date').value;
+  updateDayLabel();
+  renderLog();
+}
+function updateDayLabel() {
+  const dow = dayOfWeek(currentDate);
+  const prog = PROGRAM[dow];
+  document.getElementById('log-day-label').textContent = prog ? prog.label : '';
+}
+
+// ══ LOG PAGE ═════════════════════════════════════════════════
+function renderLog() {
+  const dow = dayOfWeek(currentDate);
+  const prog = PROGRAM[dow];
+  const container = document.getElementById('log-exercises');
+  const todayLogs = localLogs.filter(l => l.date === currentDate);
+
+  if (!prog || prog.type === 'rest') {
+    container.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><div>Rest day — recover well</div></div>`;
+    return;
+  }
+
+  let html = '';
+  prog.exercises.forEach((ex, i) => {
+    const exLogs = todayLogs.filter(l => l.exercise === ex.name);
+    const cardId = 'ex-card-' + i;
+    const bodyId = 'ex-body-' + i;
+    html += `<div class="card" id="${cardId}">
+      <div class="card-head" onclick="toggleCard('${bodyId}')">
+        <div class="card-head-left">
+          <div>
+            <div class="ex-name">${ex.name} ${ex.priority ? '<span style="color:var(--accent);font-size:11px">★</span>' : ''}</div>
+            <div class="ex-meta">${ex.detail}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${exLogs.length > 0 ? `<span class="done-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>${exLogs.length}</span>` : `<span class="cat-pill ${catClass(ex.cat)}">${ex.cat}</span>`}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="card-body" id="${bodyId}">
+        ${ex.why ? `<div style="font-size:11px;color:var(--accent);margin:8px 0 4px;font-style:italic">Why: ${ex.why}</div>` : ''}
+        <div class="sets-list" id="sets-${i}">
+          ${exLogs.map(l => `<div class="set-row">
+            <div><div class="set-vals">${formatSetVal(l)}</div>${l.notes ? `<div class="set-note">${l.notes}</div>` : ''}</div>
+            <button class="del-btn" onclick="deleteLog('${l.id}',${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>`).join('')}
+        </div>
+        ${renderLogForm(ex, i)}
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+  renderQuickFields();
+  populateExDatalist();
+}
+
+function renderLogForm(ex, i) {
+  if (ex.type === 'weighted') return `<div class="log-form" style="margin-top:10px">
+    <div class="form-row cols3">
+      <div><label class="form-label">kg</label><input type="number" id="f${i}-v1" min="0" step="0.5" placeholder="0"/></div>
+      <div><label class="form-label">reps</label><input type="number" id="f${i}-v2" min="0" placeholder="0"/></div>
+      <div><label class="form-label">note</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+    </div>
+    <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','weighted')">+ Log Set</button>
+  </div>`;
+
+  if (ex.type === 'bodyweight') return `<div class="log-form" style="margin-top:10px">
+    <div class="form-row cols2">
+      <div><label class="form-label">reps</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+      <div><label class="form-label">note</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+    </div>
+    <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','bodyweight')">+ Log Set</button>
+  </div>`;
+
+  if (ex.type === 'timed') return `<div class="log-form" style="margin-top:10px">
+    <div class="form-row cols2">
+      <div><label class="form-label">seconds</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+      <div><label class="form-label">note</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+    </div>
+    <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','timed')">+ Log Set</button>
+  </div>`;
+
+  if (ex.type === 'timed_lr') return `<div class="log-form" style="margin-top:10px">
+    <div class="form-row cols2">
+      <div><label class="form-label">Left (s)</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+      <div><label class="form-label">Right (s)</label><input type="number" id="f${i}-v2" min="0" placeholder="0"/></div>
+    </div>
+    <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','timed_lr')">+ Log Set</button>
+  </div>`;
+
+  if (ex.type === 'distance') return `<div class="log-form" style="margin-top:10px">
+    <div class="form-row cols2">
+      <div><label class="form-label">metres</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+      <div><label class="form-label">note</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+    </div>
+    <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','distance')">+ Log Set</button>
+  </div>`;
+
+  if (ex.type === 'side_reps') {
+    const sideLabel = ex.side === 'L' ? 'Left' : ex.side === 'R' ? 'Right' : 'Side';
+    return `<div class="log-form" style="margin-top:10px">
+      <div class="form-row cols2">
+        <div><label class="form-label">${sideLabel} reps</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+        <div><label class="form-label">note (optional)</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+      </div>
+      <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','side_reps','${ex.side||''}')">+ Log Set</button>
+    </div>`;
+  }
+
+  if (ex.type === 'side_time') {
+    const sideLabel = ex.side === 'L' ? 'Left' : ex.side === 'R' ? 'Right' : 'Side';
+    return `<div class="log-form" style="margin-top:10px">
+      <div class="form-row cols2">
+        <div><label class="form-label">${sideLabel} seconds</label><input type="number" id="f${i}-v1" min="0" placeholder="0"/></div>
+        <div><label class="form-label">note (optional)</label><input type="text" id="f${i}-v3" placeholder=""/></div>
+      </div>
+      <button class="log-btn" onclick="logSet(${i},'${ex.name}','${ex.cat}','side_time','${ex.side||''}')">+ Log Set</button>
+    </div>`;
+  }
+
+  return '';
+}
+
+function renderQuickFields() {
+  const type = document.getElementById('qa-type').value;
+  const c = document.getElementById('qa-fields');
+  if (type === 'weighted') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">kg</label><input type="number" id="qa-v1" min="0" step="0.5" placeholder="0"/></div><div><label class="form-label">reps</label><input type="number" id="qa-v2" min="0" placeholder="0"/></div></div>`;
+  else if (type === 'bodyweight') c.innerHTML = `<div><label class="form-label">reps</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div>`;
+  else if (type === 'timed') c.innerHTML = `<div><label class="form-label">seconds</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div>`;
+  else if (type === 'timed_lr') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">Left (s)</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div><div><label class="form-label">Right (s)</label><input type="number" id="qa-v2" min="0" placeholder="0"/></div></div>`;
+  else if (type === 'side_reps') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">Side</label><select id="qa-side"><option value="L">Left</option><option value="R">Right</option></select></div><div><label class="form-label">Reps</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div></div>`;
+  else if (type === 'side_time') c.innerHTML = `<div class="form-row cols2"><div><label class="form-label">Side</label><select id="qa-side"><option value="L">Left</option><option value="R">Right</option></select></div><div><label class="form-label">Seconds</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div></div>`;
+  else if (type === 'distance') c.innerHTML = `<div><label class="form-label">metres</label><input type="number" id="qa-v1" min="0" placeholder="0"/></div>`;
+}
+
+function populateExDatalist() {
+  const all = new Set();
+  Object.values(PROGRAM).forEach(d => d.exercises && d.exercises.forEach(e => all.add(e.name)));
+  localLogs.forEach(l => all.add(l.exercise));
+  const dl = document.getElementById('ex-datalist');
+  if (dl) dl.innerHTML = [...all].map(n => `<option value="${n}">`).join('');
+}
+
+function toggleCard(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// ══ LOGGING ══════════════════════════════════════════════════
+function logSet(idx, name, cat, type, side) {
+  side = side || '';
+  const v1 = parseFloat(document.getElementById(`f${idx}-v1`)?.value) || 0;
+  const v2 = parseFloat(document.getElementById(`f${idx}-v2`)?.value) || 0;
+  const v3 = document.getElementById(`f${idx}-v3`)?.value || '';
+
+  if (type === 'weighted' && (!v1 || !v2)) { toast('Enter kg and reps'); return; }
+  if ((type === 'bodyweight' || type === 'timed' || type === 'distance' || type === 'side_reps' || type === 'side_time') && !v1) { toast('Enter a value'); return; }
+  if (type === 'timed_lr' && (!v1 || !v2)) { toast('Enter both L and R'); return; }
+
+  // For single-side exercises, store the side label in value3 so we can show it back
+  const sideLabel = side === 'L' ? 'L' : side === 'R' ? 'R' : '';
+
+  const entry = {
+    id: 'l' + Date.now(),
+    date: currentDate,
+    session: PROGRAM[dayOfWeek(currentDate)]?.label || '',
+    exercise: name,
+    category: cat,
+    log_type: type,
+    value1: v1,
+    value2: type === 'weighted' ? v2 : (type === 'timed_lr' ? v2 : ''),
+    value3: (type === 'side_reps' || type === 'side_time') ? sideLabel : v3,
+    notes: v3,
+    logged_at: new Date().toISOString()
+  };
+
+  localLogs.push(entry);
+  localStorage.setItem('wt_logs', JSON.stringify(localLogs));
+  saveToGAS(entry);
+  toast('Logged ✓');
+  // Clear the form
+  const v1El = document.getElementById(`f${idx}-v1`); if (v1El) v1El.value = '';
+  const v2El = document.getElementById(`f${idx}-v2`); if (v2El) v2El.value = '';
+  const v3El = document.getElementById(`f${idx}-v3`); if (v3El) v3El.value = '';
+  renderLog();
+}
+
+function logQuickAdd() {
+  const name = document.getElementById('qa-name').value.trim();
+  const cat = document.getElementById('qa-cat').value;
+  const type = document.getElementById('qa-type').value;
+  if (!name) { toast('Enter exercise name'); return; }
+
+  const v1 = parseFloat(document.getElementById('qa-v1')?.value) || 0;
+  const v2 = parseFloat(document.getElementById('qa-v2')?.value) || 0;
+  const sideEl = document.getElementById('qa-side');
+  const side = sideEl ? sideEl.value : '';
+  if (!v1) { toast('Enter a value'); return; }
+
+  const entry = {
+    id: 'l' + Date.now(),
+    date: currentDate,
+    session: PROGRAM[dayOfWeek(currentDate)]?.label || '',
+    exercise: name, category: cat, log_type: type,
+    value1: v1, value2: v2,
+    value3: (type === 'side_reps' || type === 'side_time') ? side : '',
+    notes: '',
+    logged_at: new Date().toISOString()
+  };
+
+  localLogs.push(entry);
+  localStorage.setItem('wt_logs', JSON.stringify(localLogs));
+  saveToGAS(entry);
+  toast('Logged ✓');
+  document.getElementById('qa-name').value = '';
+  document.getElementById('qa-v1').value = '';
+  if (document.getElementById('qa-v2')) document.getElementById('qa-v2').value = '';
+}
+
+function deleteLog(id, idx) {
+  localLogs = localLogs.filter(l => l.id !== id);
+  localStorage.setItem('wt_logs', JSON.stringify(localLogs));
+  if (GAS_URL) {
+    fetch(GAS_URL, {method:'POST',body:JSON.stringify({action:'deleteLog',id}),headers:{'Content-Type':'application/json'}}).catch(()=>{});
+  }
+  renderLog();
+}
+
+// ══ GAS SYNC ═════════════════════════════════════════════════
+function saveToGAS(entry) {
+  if (!GAS_URL) return;
+  const payload = {...entry, action:'logSet'};
+  fetch(GAS_URL, {method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}})
+    .catch(() => {});
+}
+
+// ══ PROGRAM PAGE ═════════════════════════════════════════════
+function renderProgram() {
+  const today = dayOfWeek(todayStr());
+  const order = [today,today+1,today+2,today+3,today+4,today+5,today+6].map(d=>d%7);
+  let html = '';
+  order.forEach(dow => {
+    const p = PROGRAM[dow];
+    if (!p) return;
+    const isToday = dow === today;
+    html += `<div class="day-section">
+      <div class="day-title ${isToday ? 'day-today' : ''}">${p.label}${isToday ? ' ← today' : ''}</div>`;
+    if (p.exercises.length === 0) {
+      html += `<div style="font-size:13px;color:var(--text2);padding:6px 0">Rest — walk, stretch, sleep 8h</div>`;
+    } else {
+      p.exercises.forEach(ex => {
+        html += `<div class="program-ex ${ex.priority ? 'priority' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="program-ex-name">${ex.name}</div>
+            <span class="cat-pill ${catClass(ex.cat)}" style="margin-left:8px;flex-shrink:0">${ex.cat}</span>
+          </div>
+          <div class="program-ex-detail">${ex.detail}</div>
+          ${ex.why ? `<div class="program-ex-why">${ex.why}</div>` : ''}
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  });
+  document.getElementById('program-content').innerHTML = html;
+}
+
+// ══ PROGRESS PAGE ════════════════════════════════════════════
+function renderProgress() {
+  // Benchmarks grid
+  const grid = document.getElementById('benchmark-grid');
+  const entries = Object.entries(BASELINES);
+  grid.innerHTML = entries.map(([k, b]) => {
+    const latest = getLatestProgress(k);
+    const val = latest !== null ? latest : b.val;
+    const isImprovement = latest !== null && (k === 'Reaction Time' ? latest < b.val : latest > b.val);
+    const pct = Math.round((val / b.target) * 100);
+    return `<div class="metric-card">
+      <div class="metric-val">${val}<span class="metric-unit">${b.unit}</span></div>
+      <div class="metric-label">${k}</div>
+      <div class="metric-delta ${isImprovement ? 'delta-up' : ''}">${pct}% to target ${b.target}${b.unit}</div>
+    </div>`;
+  }).join('');
+
+  // Charts
+  drawProgressChart('pullup-chart', 'Pull-ups', '#22d3ee');
+  drawProgressChart('squat-chart', 'Squat 1RM', '#a78bfa');
+
+  // History list
+  const hist = document.getElementById('progress-history');
+  const all = getProgressLogs();
+  if (all.length === 0) {
+    hist.innerHTML = `<div class="empty"><div>No benchmarks logged yet</div><div style="margin-top:6px;font-size:12px;color:var(--text3)">Log your first benchmark above</div></div>`;
+    return;
+  }
+  const sorted = [...all].sort((a,b) => b.date.localeCompare(a.date));
+  hist.innerHTML = `<div class="card" style="padding:0 14px">` +
+    sorted.slice(0, 30).map(p => `<div class="history-item">
+      <div><div style="font-size:14px;color:var(--text)">${p.metric}</div><div class="history-date">${p.date}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="history-val">${p.value} ${getUnit(p.metric)}</div>
+        <button class="del-btn" onclick="deleteProgressEntry('${p.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>`).join('') +
+    `</div>`;
+}
+
+function getUnit(metric) {
+  return BASELINES[metric]?.unit || '';
+}
+
+function renderProgFields() {
+  const m = document.getElementById('prog-metric').value;
+  const c = document.getElementById('prog-fields');
+  if (!m) { c.innerHTML = ''; return; }
+  const unit = getUnit(m);
+  c.innerHTML = `<div class="form-row cols2">
+    <div><label class="form-label">Value (${unit})</label><input type="number" id="prog-val" step="0.1" min="0" placeholder="0"/></div>
+    <div><label class="form-label">Date</label><input type="date" id="prog-date" value="${todayStr()}"/></div>
+  </div>`;
+}
+
+function getProgressLogs() {
+  return JSON.parse(localStorage.getItem('wt_progress') || '[]');
+}
+
+function getLatestProgress(metric) {
+  const logs = getProgressLogs().filter(l => l.metric === metric);
+  if (!logs.length) return null;
+  logs.sort((a,b) => b.date.localeCompare(a.date));
+  return parseFloat(logs[0].value);
+}
+
+function logProgressEntry() {
+  const metric = document.getElementById('prog-metric').value;
+  const valEl = document.getElementById('prog-val');
+  const dateEl = document.getElementById('prog-date');
+  if (!metric || !valEl) { toast('Select a metric first'); return; }
+  const value = parseFloat(valEl.value);
+  if (!value) { toast('Enter a value'); return; }
+  const date = dateEl ? dateEl.value : todayStr();
+
+  const entry = {id:'p'+Date.now(), date, metric, value, unit:getUnit(metric), logged_at:new Date().toISOString()};
+  const logs = getProgressLogs();
+  logs.push(entry);
+  localStorage.setItem('wt_progress', JSON.stringify(logs));
+
+  if (GAS_URL) {
+    fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'logProgress',...entry}),headers:{'Content-Type':'application/json'}}).catch(()=>{});
+  }
+  toast('Benchmark saved ✓');
+  renderProgress();
+}
+
+function deleteProgressEntry(id) {
+  const logs = getProgressLogs().filter(l => l.id !== id);
+  localStorage.setItem('wt_progress', JSON.stringify(logs));
+  if (GAS_URL) {
+    fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'deleteProgress',id}),headers:{'Content-Type':'application/json'}}).catch(()=>{});
+  }
+  renderProgress();
+}
+
+function drawProgressChart(canvasId, metric, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  // Seed baselines + any logged progress
+  const baseline = BASELINES[metric];
+  const logs = getProgressLogs().filter(l => l.metric === metric).sort((a,b)=>a.date.localeCompare(b.date));
+
+  let labels, data;
+  if (logs.length === 0) {
+    labels = ['Jun 2026 (baseline)'];
+    data = [baseline.val];
+  } else {
+    labels = ['Jun 2026', ...logs.map(l=>l.date.slice(5))];
+    data = [baseline.val, ...logs.map(l=>parseFloat(l.value))];
+  }
+
+  const target = baseline.target;
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
+
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: metric,
+          data,
+          borderColor: color,
+          backgroundColor: color + '22',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: color,
+        },
+        {
+          label: 'Target',
+          data: labels.map(() => target),
+          borderColor: '#475569',
+          borderDash: [5,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {display: false}
+      },
+      scales: {
+        x: {ticks:{color:'#64748b',font:{size:11}}, grid:{color:'#1e293b'}},
+        y: {ticks:{color:'#64748b',font:{size:11}}, grid:{color:'#1e293b'}}
+      }
+    }
+  });
+}
+
+// ══ CONFIG ════════════════════════════════════════════════════
+function saveConfig() {
+  const url = document.getElementById('cfg-gas-url').value.trim();
+  GAS_URL = url;
+  localStorage.setItem('wt_gas_url', url);
+  const status = document.getElementById('cfg-status');
+  status.textContent = 'Testing connection…';
+  fetch(url + '?action=ping')
+    .then(r => r.json())
+    .then(d => { status.style.color = 'var(--green)'; status.textContent = '✓ Connected — ' + (d.message || 'OK'); })
+    .catch(() => { status.style.color = 'var(--danger)'; status.textContent = '✗ Could not reach GAS. Check URL and redeploy.'; });
+}
+
+// ══ INIT ═════════════════════════════════════════════════════
+initDate();
+renderLog();
+</script>
+</body>
+</html>
